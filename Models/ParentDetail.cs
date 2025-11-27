@@ -1,10 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FormBackend.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace FormBackend.Models
 {
     public class ParentDetail
     {
-
         [Key]
         public int Id { get; set; }
 
@@ -12,8 +12,8 @@ namespace FormBackend.Models
         public int StudentId { get; set; }
         public PersonalDetail Student { get; set; }
 
-        [Required, MaxLength(50)]
-        public string Relation { get; set; } // Father, Mother, Guardian
+        [Required]
+        public ParentType Relation { get; set; } // Father, Mother, Other
 
         [Required, MaxLength(100)]
         public string FullName { get; set; }
@@ -37,3 +37,4 @@ namespace FormBackend.Models
         public string AnnualFamilyIncome { get; set; } // Store directly as string
     }
 }
+ 

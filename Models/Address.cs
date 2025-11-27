@@ -1,27 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FormBackend.Enums;
 
-namespace FormBackend.DTOs
+namespace FormBackend.Models
 {
-    public class TemporaryAddressDto
+    public class Address
     {
         public int Id { get; set; }
+        public int StudentId { get; set; }
+        public PersonalDetail Student { get; set; }
 
-        [Required, MaxLength(50)]
+        public AddressType AddressType { get; set; } // 1 for Permanent, 2 for Temporary
         public string Province { get; set; }
-
-        [Required, MaxLength(50)]
         public string District { get; set; }
-
-        [Required, MaxLength(100)]
         public string Municipality { get; set; }
-
-        [Required, MaxLength(10)]
         public string WardNumber { get; set; }
-
-        [MaxLength(200)]
         public string Tole { get; set; }
-
-        [MaxLength(50)]
         public string HouseNumber { get; set; }
     }
 }

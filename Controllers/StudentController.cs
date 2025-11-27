@@ -22,7 +22,7 @@ namespace FormBackend.Controllers
 
         // POST: api/Student
         [HttpPost]
-        public async Task<IActionResult> AddStudent([FromBody] StudentFullDto studentDto)
+        public async Task<IActionResult> AddStudent([FromForm] StudentFullDto studentDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);

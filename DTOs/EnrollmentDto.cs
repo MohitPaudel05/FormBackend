@@ -7,7 +7,7 @@ namespace FormBackend.DTOs
         public int Id { get; set; }
 
         [Required, MaxLength(100)]
-        public string Faculty { get; set; }
+        public string Faculty { get; set; } 
 
         [Required, MaxLength(100)]
         public string Program { get; set; }

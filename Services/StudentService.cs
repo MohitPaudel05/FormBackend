@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using FormBackend.DTOs;
+using FormBackend.Enums;
+using FormBackend.Helpers;
 using FormBackend.Models;
 using FormBackend.Unit_Of_Work;
 using System;
@@ -30,20 +32,16 @@ namespace FormBackend.Services
 
             int studentId = personalDetail.Id;
 
-            // 2. Permanent Address
-            if (studentDto.PermanentAddress != null)
-            {
-                var permanent = _mapper.Map<PermanentAddress>(studentDto.PermanentAddress);
-                permanent.StudentId = studentId;
-                await _unitOfWork.PermanentAddresses.AddAsync(permanent);
-            }
+            //2 Address Detail
 
-            // 3. Temporary Address (only if provided)
-            if (studentDto.TemporaryAddress != null)
+            if (studentDto.Address != null)
             {
-                var temp = _mapper.Map<TemporaryAddress>(studentDto.TemporaryAddress);
-                temp.StudentId = studentId;
-                await _unitOfWork.TemporaryAddresses.AddAsync(temp);
+                foreach (var addrDto in studentDto.Address)
+                {
+                    var address = _mapper.Map<Address>(addrDto);
+                    address.StudentId = studentId;
+                    await _unitOfWork.Addresses.AddAsync(address);
+                }
             }
 
             // 4. Parents
@@ -51,6 +49,7 @@ namespace FormBackend.Services
             {
                 foreach (var parentDto in studentDto.Parents)
                 {
+                    // Save all provided parents
                     var parent = _mapper.Map<ParentDetail>(parentDto);
                     parent.StudentId = studentId;
                     await _unitOfWork.ParentDetails.AddAsync(parent);
@@ -75,17 +74,22 @@ namespace FormBackend.Services
                     await _unitOfWork.Qualifications.AddAsync(qual);
                 }
             }
-
             // 7. Documents
             if (studentDto.Documents != null)
             {
                 foreach (var docDto in studentDto.Documents)
                 {
-                    var doc = _mapper.Map<Document>(docDto);
-                    doc.StudentId = studentId;
+                    var doc = new StudentDocument
+                    {
+                        StudentId = studentId,
+                        DocumentType = Enum.Parse<DocumentType>(docDto.DocumentType), // map string to enum
+                        FilePath = await FileHelper.SaveFileAsync(docDto.FilePath, Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images"))
+                    };
+
                     await _unitOfWork.Documents.AddAsync(doc);
                 }
             }
+
 
             // 8. Fee Details
             if (studentDto.FeeDetail != null)
@@ -148,6 +152,57 @@ namespace FormBackend.Services
                 decl.StudentId = studentId;
                 await _unitOfWork.Declarations.AddAsync(decl);
             }
+            //15. Disability
+            if (studentDto.Disability != null)
+            {
+                var disability = _mapper.Map<Disability>(studentDto.Disability);
+                disability.StudentId = studentId;
+
+                // Optional: ensure HasDisability consistency
+                if (!disability.HasDisability)
+                {
+                    disability.DisabilityType = DisabilityType.None;
+                    disability.DisabilityPercentage = null;
+                }
+
+                await _unitOfWork.Disabilities.AddAsync(disability);
+            }
+            //16. Citizenship Info 
+
+            if (studentDto.CitizenshipInfo != null)
+            {
+                var citizenship = _mapper.Map<CitizenshipInfo>(studentDto.CitizenshipInfo);
+                citizenship.StudentId = studentId;
+                await _unitOfWork.CitizenshipInfos.AddAsync(citizenship);
+            }
+            //17. Contact Info
+            if (studentDto.ContactInfo != null)
+            {
+                var contactInfo = _mapper.Map<ContactInfo>(studentDto.ContactInfo);
+                contactInfo.StudentId = studentId;
+                await _unitOfWork.ContactInfos.AddAsync(contactInfo);
+            }
+
+            // 18. Emergency Contacts
+           
+                foreach (var ecDto in studentDto.EmergencyContacts)
+                {
+                    var ec = _mapper.Map<EmergencyContact>(ecDto);
+                    ec.StudentId = studentId;
+                    await _unitOfWork.EmergencyContacts.AddAsync(ec);
+                }
+
+                //19. Religion
+                if (studentDto.Religion != null)
+                {
+                    var religion = _mapper.Map<Religion>(studentDto.Religion);
+                    religion.StudentId = studentId;
+                    await _unitOfWork.Religions.AddAsync(religion);
+                }
+
+
+            
+
 
             // Commit all changes in one transaction
             await _unitOfWork.CompleteAsync();
@@ -162,22 +217,29 @@ namespace FormBackend.Services
             var dto = new StudentFullDto
             {
                 PersonalDetail = _mapper.Map<PersonalDetailDto>(student),
-                PermanentAddress = _mapper.Map<PermanentAddressDto>(await _unitOfWork.PermanentAddresses.FindAsync(p => p.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
-                TemporaryAddress = _mapper.Map<TemporaryAddressDto>(await _unitOfWork.TemporaryAddresses.FindAsync(t => t.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+              
                 Parents = _mapper.Map<List<ParentDetailDto>>(await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == studentId)),
                 Enrollment = _mapper.Map<EnrollmentDto>(await _unitOfWork.Enrollments.FindAsync(e => e.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
                 Qualifications = _mapper.Map<List<QualificationDto>>(await _unitOfWork.Qualifications.FindAsync(q => q.StudentId == studentId)),
-                Documents = _mapper.Map<List<DocumentDto>>(await _unitOfWork.Documents.FindAsync(d => d.StudentId == studentId)),
+                Documents = _mapper.Map<List<StudentDocumentDto>>(await _unitOfWork.Documents.FindAsync(d => d.StudentId == studentId)),
                 FeeDetail = _mapper.Map<FeeDetailDto>(await _unitOfWork.FeeDetails.FindAsync(f => f.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
                 Scholarship = _mapper.Map<ScholarshipDto>(await _unitOfWork.Scholarships.FindAsync(s => s.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
                 BankDetail = _mapper.Map<BankDetailDto>(await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
                 Interests = _mapper.Map<List<StudentInterestDto>>(await _unitOfWork.StudentInterests.FindAsync(si => si.StudentId == studentId)),
                 Awards = _mapper.Map<List<AwardDto>>(await _unitOfWork.Awards.FindAsync(a => a.StudentId == studentId)),
                 HostelTransport = _mapper.Map<HostelTransportDetailDto>(await _unitOfWork.HostelTransportDetails.FindAsync(ht => ht.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
-                Declaration = _mapper.Map<DeclarationDto>(await _unitOfWork.Declarations.FindAsync(d => d.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault()))
+                Declaration = _mapper.Map<DeclarationDto>(await _unitOfWork.Declarations.FindAsync(d => d.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+                Disability = _mapper.Map<DisabilityDto>(await _unitOfWork.Disabilities.FindAsync(d => d.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+                CitizenshipInfo = _mapper.Map<CitizenshipInfoDto>(await _unitOfWork.CitizenshipInfos.FindAsync(c => c.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+                Religion = _mapper.Map<ReligionDto>(await _unitOfWork.Religions.FindAsync(r => r.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+                ContactInfo = _mapper.Map<ContactInfoDto>(await _unitOfWork.ContactInfos.FindAsync(c => c.StudentId == studentId).ContinueWith(t => t.Result.FirstOrDefault())),
+                Address = _mapper.Map<List<AddressDto>>(await _unitOfWork.Addresses.FindAsync(a => a.StudentId == studentId)),
+                EmergencyContacts = _mapper.Map<List<EmergencyContactDto>>(await _unitOfWork.EmergencyContacts.FindAsync(ec => ec.StudentId == studentId))
             };
 
             return dto;
         }
-    }
+
+        
+}
 }
