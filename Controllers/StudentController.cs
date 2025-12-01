@@ -18,7 +18,7 @@ namespace FormBackend.Controllers
 
         // POST: api/Student
         [HttpPost]
-        public async Task<IActionResult> AddStudent([FromForm] StudentFullDto studentDto)
+        public async Task<IActionResult> AddStudent([FromBody] StudentFullDto studentDto)
         {
             if (studentDto == null || studentDto.Student == null)
                 return BadRequest("Student data is required.");

@@ -46,5 +46,16 @@ namespace FormBackend.Repositories
         {
             _dbSet.Remove(entity);
         }
+
+        // Eager loading method
+        public IQueryable<T> GetAllIncluding(params Expression<Func<T, object>>[] includeProperties)
+        {
+            IQueryable<T> query = _dbSet.AsQueryable();
+            foreach (var includeProperty in includeProperties)
+            {
+                query = query.Include(includeProperty);
+            }
+            return query;
+        }
     }
 }

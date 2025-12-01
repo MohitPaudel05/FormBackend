@@ -61,6 +61,53 @@ namespace FormBackend.Helpers
                 .ReverseMap()
                 .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => Enum.Parse<ParentType>(src.ParentType)));
 
+            //Academic history
+
+            CreateMap<AcademicHistory, AcademicHistoryDto>()
+     .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => src.Qualification.ToString()))
+     .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => src.DivisionGPA.ToString()))
+     .ReverseMap()
+     .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => Enum.Parse<QualificationType>(src.Qualification)))
+     .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => Enum.Parse<DivisionGPA>(src.DivisionGPA)));
+
+            //scholarship 
+            CreateMap<Scholarship, ScholarshipDto>()
+           .ForMember(dest => dest.FeeCategory, opt => opt.MapFrom(src => src.FeeCategory.ToString()))
+          .ForMember(dest => dest.ScholarshipType, opt => opt.MapFrom(src => src.ScholarshipType.ToString()))
+          .ReverseMap()
+          .ForMember(dest => dest.FeeCategory, opt => opt.MapFrom(src => Enum.Parse<FeeCategory>(src.FeeCategory)))
+          .ForMember(dest => dest.ScholarshipType, opt => opt.MapFrom(src =>
+         string.IsNullOrEmpty(src.ScholarshipType) ? ScholarshipType.None : Enum.Parse<ScholarshipType>(src.ScholarshipType)));
+            //BANK DETAILS
+
+            CreateMap<BankDetail, BankDetailDto>().ReverseMap();
+            // ACHIEVEMENTS
+            CreateMap<Achievement, AchievementDto>().ReverseMap();
+
+            // StudentExtraInfo Mapping (strict — no null checks)
+            CreateMap<StudentExtraInfo, StudentExtraInfoDto>()
+          .ForMember(dest => dest.ExtracurricularInterests,
+          opt => opt.MapFrom(src => src.ExtracurricularInterests.Split(new[] { ',' })))
+         .ReverseMap()
+         .ForMember(dest => dest.ExtracurricularInterests,
+          opt => opt.MapFrom(src => string.Join(",", src.ExtracurricularInterests)));
+
+            //declaration mapping
+            CreateMap<Declaration, DeclarationDto>().ReverseMap();
+
+            // ProgramEnrollment ↔ ProgramEnrollmentDto
+            CreateMap<ProgramEnrollment, ProgramEnrollmentDto>()
+                .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
+                .ReverseMap()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore());
+
+
+            // AcademicSession ↔ AcademicSessionDto
+            CreateMap<AcademicSession, AcademicSessionDto>()
+                .ReverseMap()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ProgramEnrollment, opt => opt.Ignore());
 
 
 

@@ -21,6 +21,19 @@ namespace FormBackend.Data
         public DbSet<Address> Addresses { get; set; }
 
         public DbSet<ParentDetail> ParentDetails { get; set; }
+        public DbSet<ProgramEnrollment> ProgramEnrollments { get; set; }
+        public DbSet<AcademicSession> AcademicSessions { get; set; }
 
-    }
+        public DbSet<AcademicHistory> AcademicHistories { get; set; }
+
+        public DbSet<Scholarship> Scholarships { get; set; }
+
+        public DbSet<BankDetail> Banks { get; set; }
+        public DbSet<Achievement> Achievements { get; set; }
+
+        public DbSet<StudentExtraInfo> StudentExtraInfos { get; set; }
+        
+        public DbSet<Declaration> Declarations { get; set; }
+
+        }
 }

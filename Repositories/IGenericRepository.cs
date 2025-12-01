@@ -11,5 +11,8 @@ namespace FormBackend.Repositories
         Task AddAsync(T entity);
         void Update(T entity);
         void Delete(T entity);
+
+        // NEW: eager loading
+        IQueryable<T> GetAllIncluding(params Expression<Func<T, object>>[] includeProperties);
     }
 }

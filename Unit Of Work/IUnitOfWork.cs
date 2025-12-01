@@ -15,7 +15,18 @@ namespace FormBackend.Unit_Of_Work
         IGenericRepository<Address> Addresses { get; }
 
         IGenericRepository<ParentDetail> ParentDetails { get; }
+        //enrollment section------------------------------------------------
+        IGenericRepository<ProgramEnrollment> ProgramEnrollments { get; }
+        IGenericRepository<AcademicSession> AcademicSessions { get; }
 
+        IGenericRepository<AcademicHistory> AcademicHistories { get; }
+        //------------------------------------------------------------------
+        IGenericRepository<Scholarship> Scholarships { get; }
+
+        IGenericRepository<BankDetail> BankDetails { get; }
+        IGenericRepository<StudentExtraInfo> StudentExtraInfos { get; }
+        IGenericRepository<Achievement> Achievements { get; }
+        IGenericRepository<Declaration> Declarations { get; }
         Task<int> CompleteAsync();
     }
 }

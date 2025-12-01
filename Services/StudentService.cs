@@ -5,6 +5,7 @@ using FormBackend.Helpers;
 using FormBackend.Models;
 using FormBackend.Unit_Of_Work;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.HttpResults;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -78,20 +79,15 @@ namespace FormBackend.Services
                 emergency.StudentId = studentId;
                 await _unitOfWork.Emergencies.AddAsync(emergency);
             }
-            // address
+
+            // Addresses
             if (dto.Addresses != null && dto.Addresses.Any())
             {
                 foreach (var addrDto in dto.Addresses)
                 {
-                    // Parse AddressType from string to enum
-                    if (!Enum.TryParse<AddressType>(addrDto.AddressType, out var addrType))
-                    {
-                        addrType = AddressType.Permanent; // default
-                    }
-
                     var address = new Address
                     {
-                        AddressType = addrType,
+                        AddressType = Enum.TryParse(addrDto.AddressType, out AddressType type) ? type : AddressType.Permanent,
                         Province = Enum.Parse<Province>(addrDto.Province),
                         District = addrDto.District,
                         Municipality = addrDto.Municipality,
@@ -100,35 +96,14 @@ namespace FormBackend.Services
                         HouseNumber = addrDto.HouseNumber,
                         StudentId = studentId
                     };
-
                     await _unitOfWork.Addresses.AddAsync(address);
-
-                    // If "SameAsPermanent", copy Permanent info as a new row
-                    if (addrType == AddressType.SameAsPermanent)
-                    {
-                        var permanent = dto.Addresses.FirstOrDefault(a => a.AddressType == "Permanent");
-                        if (permanent != null)
-                        {
-                            var copyAddress = new Address
-                            {
-                                AddressType = AddressType.SameAsPermanent,
-                                Province = Enum.Parse<Province>(permanent.Province),
-                                District = permanent.District,
-                                Municipality = permanent.Municipality,
-                                WardNumber = permanent.WardNumber,
-                                Tole = permanent.Tole,
-                                HouseNumber = permanent.HouseNumber,
-                                StudentId = studentId
-                            };
-                            await _unitOfWork.Addresses.AddAsync(copyAddress);
-                        }
-                    }
                 }
+
+                await _unitOfWork.CompleteAsync(); // <- add this
             }
 
-
-            //Parent Details
-              if (dto.Parents != null && dto.Parents.Any())
+            // Parents
+            if (dto.Parents != null && dto.Parents.Any())
             {
                 foreach (var parentDto in dto.Parents)
                 {
@@ -138,33 +113,111 @@ namespace FormBackend.Services
                 }
             }
 
-            await _unitOfWork.CompleteAsync();
-            await _unitOfWork.CompleteAsync();
+            // Scholarships
+            if (dto.Scholarships != null)
+            {
+                var scholarship = _mapper.Map<Scholarship>(dto.Scholarships);
+                scholarship.StudentId = studentId;
+                await _unitOfWork.Scholarships.AddAsync(scholarship);
+            }
 
+            // Bank Details
+            if (dto.BankDetails != null)
+            {
+                var bank = _mapper.Map<BankDetail>(dto.BankDetails);
+                bank.StudentId = studentId;
+                await _unitOfWork.BankDetails.AddAsync(bank);
+            }
 
-            
+            // Student Extra Info
+            if (dto.StudentExtraInfos != null)
+            {
+                var extraInfo = _mapper.Map<StudentExtraInfo>(dto.StudentExtraInfos);
+                extraInfo.StudentId = studentId;
+                await _unitOfWork.StudentExtraInfos.AddAsync(extraInfo);
+            }
+
+            // Achievements
+            if (dto.Achievements != null && dto.Achievements.Any())
+            {
+                foreach (var achDto in dto.Achievements)
+                {
+                    var achievement = _mapper.Map<Achievement>(achDto);
+                    achievement.StudentId = studentId;
+                    await _unitOfWork.Achievements.AddAsync(achievement);
+                }
+            }
+
+            // Academic Histories
+            if (dto.AcademicHistories != null && dto.AcademicHistories.Any())
+            {
+                foreach (var acDto in dto.AcademicHistories)
+                {
+                    if (acDto.Marksheet != null)
+                        acDto.MarksheetPath = await FileHelper.SaveDocumentAsync(acDto.Marksheet, _wwwrootPath, "documents");
+
+                    if (acDto.Provisional != null)
+                        acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "documents");
+
+                    var academic = _mapper.Map<AcademicHistory>(acDto);
+                    academic.StudentId = studentId;
+                    await _unitOfWork.AcademicHistories.AddAsync(academic);
+                }
+            }
+
+            // Program Enrollment & Academic Sessions
+            if (dto.ProgramEnrollments != null && dto.ProgramEnrollments.Any())
+            {
+                foreach (var enrollmentDto in dto.ProgramEnrollments)
+                {
+                    var enrollment = new ProgramEnrollment
+                    {
+                        StudentId = studentId,
+                        Faculty = enrollmentDto.Faculty,
+                        DegreeProgram = enrollmentDto.DegreeProgram,
+                        EnrollmentDate = enrollmentDto.EnrollmentDate,
+                        RegistrationNumber = enrollmentDto.RegistrationNumber
+                    };
+
+                    await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
+                    await _unitOfWork.CompleteAsync(); // get enrollment id
+                    int enrollmentId = enrollment.Id;
+
+                    if (enrollmentDto.AcademicSessions != null && enrollmentDto.AcademicSessions.Any())
+                    {
+                        foreach (var sessionDto in enrollmentDto.AcademicSessions)
+                        {
+                            var session = new AcademicSession
+                            {
+                                ProgramEnrollmentId = enrollmentId,
+                                AcademicYear = sessionDto.AcademicYear,
+                                Semester = sessionDto.Semester,
+                                Section = sessionDto.Section,
+                                RollNumber = sessionDto.RollNumber,
+                                Status = sessionDto.Status
+                            };
+                            await _unitOfWork.AcademicSessions.AddAsync(session);
+                        }
+                    }
+                }
+            }
+
+            // Declaration
+            if (dto.Declaration != null)
+            {
+                var declaration = _mapper.Map<Declaration>(dto.Declaration);
+                declaration.StudentId = studentId;
+                declaration.DateOfApplication = DateOnly.FromDateTime(DateTime.Now);
+                await _unitOfWork.Declarations.AddAsync(declaration);
+            }
+
+            // SAVE ALL CHANGES
+            await _unitOfWork.CompleteAsync();
 
             // 4. Return full DTO
             return await GetStudentByIdAsync(studentId)!;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Get full student by ID
+// Get full student by ID
         public async Task<StudentFullDto?> GetStudentByIdAsync(int id)
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
@@ -175,9 +228,24 @@ namespace FormBackend.Services
             var citizenship = (await _unitOfWork.CitizenShips.FindAsync(c => c.StudentId == id)).FirstOrDefault();
             var ethnicity = (await _unitOfWork.Ethnicities.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var emergency = (await _unitOfWork.Emergencies.FindAsync(e => e.StudentId == id)).FirstOrDefault();
-
+            var academicHistories = await _unitOfWork.AcademicHistories.FindAsync(a => a.StudentId == id);
             var addresses = await _unitOfWork.Addresses.FindAsync(a => a.StudentId == id);
             var parents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == id);
+            var scholarship = (await _unitOfWork.Scholarships.FindAsync(s => s.StudentId == id)).FirstOrDefault();
+            var bank = (await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == id)).FirstOrDefault();
+            var extraInfo = await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == id);
+            var achievements = await _unitOfWork.Achievements.FindAsync(a => a.StudentId == id);
+
+            // ProgramEnrollments + AcademicSessions
+            var enrollments = await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == id);
+            var programEnrollments = new List<ProgramEnrollmentDto>();
+            foreach (var enrollment in enrollments)
+            {
+                var sessions = await _unitOfWork.AcademicSessions.FindAsync(s => s.ProgramEnrollmentId == enrollment.Id);
+                var enrollmentDto = _mapper.Map<ProgramEnrollmentDto>(enrollment);
+                enrollmentDto.AcademicSessions = _mapper.Map<List<AcademicSessionDto>>(sessions);
+                programEnrollments.Add(enrollmentDto);
+            }
 
             return new StudentFullDto
             {
@@ -188,7 +256,13 @@ namespace FormBackend.Services
                 Ethnicity = _mapper.Map<EthnicityDto>(ethnicity),
                 Emergency = _mapper.Map<EmergencyDto>(emergency),
                 Addresses = _mapper.Map<List<AddressDto>>(addresses),
-                Parents = _mapper.Map<List<ParentDetailDto>>(parents)
+                Parents = _mapper.Map<List<ParentDetailDto>>(parents),
+                Scholarships = _mapper.Map<ScholarshipDto>(scholarship),
+                BankDetails = _mapper.Map<BankDetailDto>(bank),
+                StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo.FirstOrDefault()),
+                Achievements = _mapper.Map<List<AchievementDto>>(achievements),
+                AcademicHistories = _mapper.Map<List<AcademicHistoryDto>>(academicHistories),
+                ProgramEnrollments = programEnrollments
             };
         }
     }
