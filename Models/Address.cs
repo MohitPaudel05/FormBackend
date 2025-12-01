@@ -1,19 +1,31 @@
 ﻿using FormBackend.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace FormBackend.Models
 {
     public class Address
     {
         public int Id { get; set; }
-        public int StudentId { get; set; }
-        public PersonalDetail Student { get; set; }
+        [Required]
+        public AddressType AddressType { get; set; }  // Use enum
 
-        public AddressType AddressType { get; set; } // 1 for Permanent, 2 for Temporary
-        public string Province { get; set; }
-        public string District { get; set; }
-        public string Municipality { get; set; }
-        public string WardNumber { get; set; }
-        public string Tole { get; set; }
-        public string HouseNumber { get; set; }
+        [Required]
+        public Province Province { get; set; }
+
+        [Required]
+        public string District { get; set; } = string.Empty;
+
+        [Required]
+        public string Municipality { get; set; } = string.Empty;
+
+        [Required]
+        public string WardNumber { get; set; } = string.Empty;
+
+        public string? Tole { get; set; }
+        public string? HouseNumber { get; set; }
+
+        // Link with Student
+        public int StudentId { get; set; }
+        public Student Student { get; set; } = null!;
     }
 }

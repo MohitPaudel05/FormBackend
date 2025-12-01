@@ -1,32 +1,35 @@
 using AutoMapper;
 using FormBackend.Data;
-using FormBackend.Mapping;
+using FormBackend.Helpers;
 using FormBackend.Services;
+
 using FormBackend.Unit_Of_Work;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
+//dbcontext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// AutoMapper
+//automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+//json options
 
-// MVC + Swagger
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-// JSON Options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // For enums as strings
     });
 
-//  Add CORS
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
+//CORS Policy
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -37,20 +40,38 @@ builder.Services.AddCors(options =>
 });
 
 
-// DI
+//  Dependency Injection
+
+// UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IStudentService, StudentService>();
+
+// StudentService with wwwroot injection
+builder.Services.AddScoped<IStudentService>(provider =>
+{
+    var unitOfWork = provider.GetRequiredService<IUnitOfWork>();
+    var mapper = provider.GetRequiredService<IMapper>();
+    var env = provider.GetRequiredService<IWebHostEnvironment>(); // inject wwwroot
+    return new StudentService(unitOfWork, mapper, env);
+});
+
+
+//  Build App
 
 var app = builder.Build();
+
+
+//  Middleware
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseCors("AllowAll");
-app.UseStaticFiles();
+app.UseStaticFiles(); // serve wwwroot
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

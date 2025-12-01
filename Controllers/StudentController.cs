@@ -1,16 +1,12 @@
-﻿using AutoMapper;
-using FormBackend.DTOs;
-using FormBackend.Models;
+﻿using FormBackend.DTOs;
 using FormBackend.Services;
-using FormBackend.Unit_Of_Work;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace FormBackend.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _studentService;
@@ -24,22 +20,23 @@ namespace FormBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddStudent([FromForm] StudentFullDto studentDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (studentDto == null || studentDto.Student == null)
+                return BadRequest("Student data is required.");
 
-            await _studentService.AddStudentAsync(studentDto);
-            return Ok(new { message = "Student added successfully!" });
+            var result = await _studentService.AddStudentAsync(studentDto);
+            return Ok(result);
         }
 
         // GET: api/Student/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetStudent(int id)
+        public async Task<IActionResult> GetStudentById(int id)
         {
             var student = await _studentService.GetStudentByIdAsync(id);
             if (student == null)
-                return NotFound(new { message = "Student not found." });
+                return NotFound($"Student with ID {id} not found.");
 
             return Ok(student);
         }
     }
 }
+

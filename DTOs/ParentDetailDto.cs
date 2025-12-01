@@ -1,34 +1,15 @@
-﻿using FormBackend.Enums;
-using System.ComponentModel.DataAnnotations;
-
-namespace FormBackend.DTOs
+﻿namespace FormBackend.DTOs
 {
     public class ParentDetailDto
     {
-        public int Id { get; set; }
-
-        [Required]
-        public ParentType Relation { get; set; } // Father, Mother, Guardian
-
-        [Required, MaxLength(100)]
-        public string FullName { get; set; }
-
-        [MaxLength(100)]
-        public string Occupation { get; set; }
-
-        [MaxLength(100)]
-        public string ?Designation { get; set; }
-
-        [MaxLength(150)]
-        public string Organization { get; set; }
-
-        [Required, MaxLength(15)]
-        public string MobileNumber { get; set; }
-
-        [EmailAddress]
-        public string Email { get; set; }
-
-        [MaxLength(20)]
-        public string AnnualFamilyIncome { get; set; }
+        public string ParentType { get; set; } = string.Empty; // "Father", "Mother", "Guardian"
+        public string FullName { get; set; } = string.Empty;
+        public string Occupation { get; set; } = string.Empty;
+        public string Designation { get; set; } = string.Empty;
+        public string Organization { get; set; } = string.Empty;
+        public string MobileNumber { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        
+        public string FamilyIncome { get; set; } = string.Empty; // enum as string
     }
 }

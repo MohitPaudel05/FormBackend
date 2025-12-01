@@ -1,10 +1,11 @@
 ﻿using FormBackend.Data;
 using FormBackend.Models;
 using FormBackend.Repositories;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace FormBackend.Unit_Of_Work
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork 
     {
         private readonly ApplicationDbContext _context;
 
@@ -12,52 +13,25 @@ namespace FormBackend.Unit_Of_Work
         {
             _context = context;
 
-            PersonalDetails = new GenericRepository<PersonalDetail>(_context);
-           
-            ParentDetails = new GenericRepository<ParentDetail>(_context);
-            Enrollments = new GenericRepository<Enrollment>(_context);
-            Qualifications = new GenericRepository<Qualification>(_context);
-            Documents = new GenericRepository<StudentDocument>(_context);
-            FeeDetails = new GenericRepository<FeeDetail>(_context);
-            Scholarships = new GenericRepository<Scholarship>(_context);
-            BankDetails = new GenericRepository<BankDetail>(_context);
-            StudentInterests = new GenericRepository<StudentInterest>(_context);
-            Awards = new GenericRepository<Award>(_context);
-            HostelTransportDetails = new GenericRepository<HostelTransportDetail>(_context);
-            Declarations = new GenericRepository<Declaration>(_context);
+            Students = new GenericRepository<Student>(_context);
+            SecondaryInfos = new GenericRepository<SecondaryInfo>(_context);
+            Ethnicities = new GenericRepository<Ethnicity>(_context);
+            Emergencies = new GenericRepository<Emergency>(_context);
             Disabilities = new GenericRepository<Disability>(_context);
-            CitizenshipInfos = new GenericRepository<CitizenshipInfo>(_context);
-            ContactInfos = new GenericRepository<ContactInfo>(_context);
-            Religions = new GenericRepository<Religion>(_context);
+            CitizenShips = new GenericRepository<CitizenShip>(_context);
             Addresses = new GenericRepository<Address>(_context);
-            EmergencyContacts = new GenericRepository<EmergencyContact>(_context);
+            ParentDetails = new GenericRepository<ParentDetail>(_context);
+
         }
 
-        public IGenericRepository<PersonalDetail> PersonalDetails { get; private set; }
-        
-        public IGenericRepository<ParentDetail> ParentDetails { get; private set; }
-        public IGenericRepository<Enrollment> Enrollments { get; private set; }
-        public IGenericRepository<Qualification> Qualifications { get; private set; }
-        public IGenericRepository<StudentDocument> Documents { get; private set; }
-        public IGenericRepository<FeeDetail> FeeDetails { get; private set; }
-        public IGenericRepository<Scholarship> Scholarships { get; private set; }
-        public IGenericRepository<BankDetail> BankDetails { get; private set; }
-        public IGenericRepository<StudentInterest> StudentInterests { get; private set; }
-        public IGenericRepository<Award> Awards { get; private set; }
-        public IGenericRepository<HostelTransportDetail> HostelTransportDetails { get; private set; }
-        public IGenericRepository<Declaration> Declarations { get; private set; }
-
+        public IGenericRepository<Student> Students { get; private set; }
+        public IGenericRepository<SecondaryInfo> SecondaryInfos { get; private set; }
+        public IGenericRepository<Ethnicity> Ethnicities { get; private set; }
+        public IGenericRepository<Emergency> Emergencies { get; private set; }
         public IGenericRepository<Disability> Disabilities { get; private set; }
-
-        public IGenericRepository<ContactInfo> ContactInfos { get; private set; }
-
-        public IGenericRepository<CitizenshipInfo> CitizenshipInfos { get; private set; }
-
-        public IGenericRepository<Religion> Religions { get; private set; } 
-
+        public IGenericRepository<CitizenShip> CitizenShips { get; private set; }
         public IGenericRepository<Address> Addresses { get; private set; }
-
-        public IGenericRepository<EmergencyContact> EmergencyContacts { get; private set; }
+        public IGenericRepository<ParentDetail> ParentDetails { get; private set; }
 
         public async Task<int> CompleteAsync()
         {

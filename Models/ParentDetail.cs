@@ -5,36 +5,37 @@ namespace FormBackend.Models
 {
     public class ParentDetail
     {
-        [Key]
         public int Id { get; set; }
 
         [Required]
-        public int StudentId { get; set; }
-        public PersonalDetail Student { get; set; }
+        public ParentType ParentType { get; set; }  // Father, Mother, Guardian
 
         [Required]
-        public ParentType Relation { get; set; } // Father, Mother, Other
+        public string FullName { get; set; } = string.Empty;
 
-        [Required, MaxLength(100)]
-        public string FullName { get; set; }
+        [Required]
+        public string Occupation { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string Occupation { get; set; }
+        [Required]
+        public string Designation { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string Designation { get; set; }
+        [Required]
+        public string Organization { get; set; } = string.Empty;
 
-        [MaxLength(150)]
-        public string Organization { get; set; }
+        [Required]
+        public string MobileNumber { get; set; } = string.Empty;
 
-        [Required, MaxLength(15)]
-        public string MobileNumber { get; set; }
+        [Required]
+        public string Email { get; set; } = string.Empty;
 
-        [EmailAddress]
-        public string Email { get; set; }
 
-        [MaxLength(20)]
-        public string AnnualFamilyIncome { get; set; } // Store directly as string
+        [Required]
+        public AnnualIncome FamilyIncome { get; set; }
+
+        // Link with Student
+        [Required]
+        public int StudentId { get; set; }
+        public Student Student { get; set; } = null!;
     }
 }
- 
+

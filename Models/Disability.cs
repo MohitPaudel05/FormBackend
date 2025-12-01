@@ -1,19 +1,14 @@
 ﻿using FormBackend.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace FormBackend.Models
 {
     public class Disability
     {
         public int Id { get; set; }
-
+        public DisabilityStatus DisabilityStatus { get; set; }
+        public string? DisabilityType { get; set; } // Only if not None
+        public int? DisabilityPercentage { get; set; } // 0–100
         public int StudentId { get; set; }
-        public PersonalDetail Student { get; set; }
-        public bool HasDisability { get; set; } = false;
-
-        [MaxLength(100)]
-        public DisabilityType DisabilityType { get; set; } = DisabilityType.None;
-
-        public int? DisabilityPercentage { get; set; }
+        public Student Student { get; set; }
     }
 }

@@ -2,9 +2,8 @@
 {
     public enum ParentType
     {
-
-        Father =1,
-        Mother =2,
-        Other =3,
+        Father = 1,
+        Mother,
+        Guardian
     }
 }

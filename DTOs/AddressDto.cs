@@ -1,18 +1,13 @@
-﻿using FormBackend.Enums;
-
-namespace FormBackend.DTOs
+﻿namespace FormBackend.DTOs
 {
     public class AddressDto
     {
-        public int  Id { get; set; }
-
-        public AddressType AddressType { get; set; }
-
-        public string Province { get; set; }
-        public string District { get; set; }
-        public string Municipality { get; set; }
-        public string WardNumber { get; set; }
-        public string Tole { get; set; }
-        public string HouseNumber { get; set; }
+        public string AddressType { get; set; } = string.Empty; // "Permanent" / "Temporary" / "CopyOfPermanent"
+        public string Province { get; set; } = string.Empty; // enum as string
+        public string District { get; set; } = string.Empty;
+        public string Municipality { get; set; } = string.Empty;
+        public string WardNumber { get; set; } = string.Empty;
+        public string? Tole { get; set; }
+        public string? HouseNumber { get; set; }
     }
 }
