@@ -29,8 +29,8 @@ namespace FormBackend.Models
         public string Email { get; set; } = string.Empty;
 
 
-        [Required]
-        public AnnualIncome FamilyIncome { get; set; }
+        
+        public AnnualIncome? FamilyIncome { get; set; }
 
         // Link with Student
         [Required]

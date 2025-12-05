@@ -9,11 +9,16 @@ namespace FormBackend.Helpers
     {
         public MapperProfile()
         {
-
             CreateMap<Student, StudentDto>()
+                // Map Gender enum to string
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()))
+                // Map DateOnly -> DateTime
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToDateTime(TimeOnly.MinValue)))
                 .ReverseMap()
-                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => Enum.Parse<Gender>(src.Gender)));
+                // Map Gender string -> enum
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => Enum.Parse<Gender>(src.Gender)))
+                // Map DateTime -> DateOnly
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => DateOnly.FromDateTime(src.DateOfBirth)));
 
             // SecondaryInfo
             CreateMap<SecondaryInfo, SecondaryInfoDto>()
@@ -34,7 +39,12 @@ namespace FormBackend.Helpers
                 .ForMember(dest => dest.EthnicityName, opt => opt.MapFrom(src => Enum.Parse<EthnicityName>(src.EthnicityName)));
 
             // Emergency
-            CreateMap<Emergency, EmergencyDto>().ReverseMap();
+            CreateMap<Emergency, EmergencyDto>()
+         .ForMember(dest => dest.EmergencyContactRelation,
+             opt => opt.MapFrom(src => src.EmergencyContactRelation.ToString()))
+         .ReverseMap()
+         .ForMember(dest => dest.EmergencyContactRelation,
+             opt => opt.MapFrom(src => Enum.Parse<RelationType>(src.EmergencyContactRelation, true)));
 
             // Disability
             CreateMap<Disability, DisabilityDto>()
@@ -46,29 +56,42 @@ namespace FormBackend.Helpers
             CreateMap<CitizenShip, CitizenShipDto>().ReverseMap();
 
 
-            // Address
+          
 
-            CreateMap<Address, AddressDto>()
-            .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType.ToString()))
-            .ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province.ToString()))
-           .ReverseMap()
-            .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => Enum.Parse<AddressType>(src.AddressType)))
-          .ForMember(dest => dest.Province, opt => opt.MapFrom(src => Enum.Parse<Province>(src.Province)));
-            // Parents details 
-           
-            CreateMap<ParentDetail, ParentDetailDto>()
-                .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => src.ParentType.ToString()))
+            // ===== ADDRESS =====
+            CreateMap<AddressDto, Address>()
+                .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => Enum.Parse<AddressType>(src.AddressType)))
+                .ForMember(dest => dest.Province, opt => opt.MapFrom(src => Enum.Parse<Province>(src.Province)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => src.District))
+                .ForMember(dest => dest.Municipality, opt => opt.MapFrom(src => src.Municipality))
+                .ForMember(dest => dest.WardNumber, opt => opt.MapFrom(src => src.WardNumber))
+                .ForMember(dest => dest.Tole, opt => opt.MapFrom(src => src.Tole))
+                .ForMember(dest => dest.HouseNumber, opt => opt.MapFrom(src => src.HouseNumber))
                 .ReverseMap()
-                .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => Enum.Parse<ParentType>(src.ParentType)));
+                .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType.ToString()))
+                .ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province.ToString()));
+            // ===== PARENT DETAIL =====
+            CreateMap<ParentDetailDto, ParentDetail>()
+                .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => Enum.Parse<ParentType>(src.ParentType)))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Occupation, opt => opt.MapFrom(src => src.Occupation ?? string.Empty))
+                .ForMember(dest => dest.Designation, opt => opt.MapFrom(src => src.Designation ?? string.Empty))
+                .ForMember(dest => dest.Organization, opt => opt.MapFrom(src => src.Organization ?? string.Empty))
+                .ForMember(dest => dest.MobileNumber, opt => opt.MapFrom(src => src.MobileNumber))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
+                .ForMember(dest => dest.FamilyIncome, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.AnnualFamilyIncome) ? (AnnualIncome?)null : Enum.Parse<AnnualIncome>(src.AnnualFamilyIncome)))
+                .ReverseMap()
+                .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => src.ParentType.ToString()))
+                .ForMember(dest => dest.AnnualFamilyIncome, opt => opt.MapFrom(src => src.FamilyIncome.HasValue ? src.FamilyIncome.ToString() : string.Empty));
 
-            //Academic history
-
+            // ---------------- AcademicHistory ----------------
             CreateMap<AcademicHistory, AcademicHistoryDto>()
-     .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => src.Qualification.ToString()))
-     .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => src.DivisionGPA.ToString()))
-     .ReverseMap()
-     .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => Enum.Parse<QualificationType>(src.Qualification)))
-     .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => Enum.Parse<DivisionGPA>(src.DivisionGPA)));
+                .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => src.Qualification.ToString()))
+                .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => src.DivisionGPA.ToString()))
+                .ReverseMap()
+                .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => Enum.Parse<QualificationType>(src.Qualification, true)))
+                .ForMember(dest => dest.DivisionGPA, opt => opt.MapFrom(src => Enum.Parse<DivisionGPA>(src.DivisionGPA, true)));
+
 
             //scholarship 
             CreateMap<Scholarship, ScholarshipDto>()
@@ -96,24 +119,31 @@ namespace FormBackend.Helpers
             CreateMap<Declaration, DeclarationDto>().ReverseMap();
 
             // ProgramEnrollment ↔ ProgramEnrollmentDto
-            CreateMap<ProgramEnrollment, ProgramEnrollmentDto>()
-                .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
-                .ReverseMap()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Student, opt => opt.Ignore());
+            //CreateMap<ProgramEnrollment, ProgramEnrollmentDto>()
+            //    .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
+            //    .ReverseMap()
+            //    .ForMember(dest => dest.Id, opt => opt.Ignore())
+            //    .ForMember(dest => dest.Student, opt => opt.Ignore());
+            // Enrollment
+            CreateMap<ProgramEnrollmentDto, ProgramEnrollment>()
+              .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions));
+
+            // Academic Sessions
+            CreateMap<AcademicSessionDto, AcademicSession>();
 
 
             // AcademicSession ↔ AcademicSessionDto
-            CreateMap<AcademicSession, AcademicSessionDto>()
-                .ReverseMap()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ProgramEnrollment, opt => opt.Ignore());
+            //CreateMap<AcademicSession, AcademicSessionDto>()
+            //    .ReverseMap()
+            //    .ForMember(dest => dest.Id, opt => opt.Ignore())
+            //    .ForMember(dest => dest.ProgramEnrollment, opt => opt.Ignore());
 
 
 
             // Full DTO mapping (nested objects)
             CreateMap<StudentFullDto, Student>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                 .ForMember(dest => dest.Id, opt => opt.Ignore()) // ignore PK
+                 .ForMember(dest => dest.ProgramEnrollment, opt => opt.MapFrom(src => src.ProgramEnrollments));
         }
     }
 }

@@ -10,7 +10,7 @@ namespace FormBackend.Models
 
         public Faculty Faculty { get; set; }
         public DegreeProgram DegreeProgram { get; set; }
-        public DateOnly EnrollmentDate { get; set; }
+        public DateTime  EnrollmentDate { get; set; }
         public string RegistrationNumber { get; set; } = string.Empty;
 
         public ICollection<AcademicSession> AcademicSessions { get; set; } = new List<AcademicSession>();

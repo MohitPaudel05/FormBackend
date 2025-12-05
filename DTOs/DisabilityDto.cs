@@ -6,6 +6,6 @@
         public string? DisabilityType { get; set; }
         public int? DisabilityPercentage { get; set; }
 
-        public int StudentId { get; set; }
+        
     }
 }

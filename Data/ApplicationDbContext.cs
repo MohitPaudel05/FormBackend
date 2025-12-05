@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FormBackend.Data
 {
-    public class ApplicationDbContext :DbContext
+    public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions options) :base(options)
+        public ApplicationDbContext(DbContextOptions options) : base(options)
         {
-            
+
         }
         public DbSet<Student> Students { get; set; }
         public DbSet<Emergency> Emergencies { get; set; }
@@ -32,8 +32,24 @@ namespace FormBackend.Data
         public DbSet<Achievement> Achievements { get; set; }
 
         public DbSet<StudentExtraInfo> StudentExtraInfos { get; set; }
-        
+
         public DbSet<Declaration> Declarations { get; set; }
 
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Student → ProgramEnrollment (1-to-1)
+            // ProgramEnrollment → AcademicSession (1-to-many)
+            
+
+         
+            modelBuilder.Entity<AcademicSession>()
+                .HasOne(a => a.ProgramEnrollment)
+                .WithMany(e => e.AcademicSessions)
+                .HasForeignKey(a => a.ProgramEnrollmentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
+    }
 }

@@ -7,6 +7,7 @@ using FormBackend.Unit_Of_Work;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace FormBackend.Services
@@ -80,37 +81,47 @@ namespace FormBackend.Services
                 await _unitOfWork.Emergencies.AddAsync(emergency);
             }
 
-            // Addresses
-            if (dto.Addresses != null && dto.Addresses.Any())
+            // Addresses - Now iterates through List<AddressDto>
+            if (dto.Addresses != null && dto.Addresses.Count > 0)
             {
-                foreach (var addrDto in dto.Addresses)
+                foreach (var addressDto in dto.Addresses)
                 {
+                    // Skip empty addresses (e.g., when SameAsPermanent is selected, we may not need temporary)
+                    if (string.IsNullOrEmpty(addressDto.District))
+                        continue;
+
                     var address = new Address
                     {
-                        AddressType = Enum.TryParse(addrDto.AddressType, out AddressType type) ? type : AddressType.Permanent,
-                        Province = Enum.Parse<Province>(addrDto.Province),
-                        District = addrDto.District,
-                        Municipality = addrDto.Municipality,
-                        WardNumber = addrDto.WardNumber,
-                        Tole = addrDto.Tole,
-                        HouseNumber = addrDto.HouseNumber,
-                        StudentId = studentId
+                        StudentId = studentId,
+                        District = addressDto.District,
+                        Municipality = addressDto.Municipality,
+                        Province = Enum.Parse<Province>(addressDto.Province),
+                        WardNumber = addressDto.WardNumber,
+                        Tole = addressDto.Tole,
+                        HouseNumber = addressDto.HouseNumber
                     };
+
+                    // Determine AddressType
+                    address.AddressType = Enum.Parse<AddressType>(addressDto.AddressType);
+
                     await _unitOfWork.Addresses.AddAsync(address);
                 }
-
-                await _unitOfWork.CompleteAsync(); // <- add this
+                await _unitOfWork.CompleteAsync();
             }
 
-            // Parents
-            if (dto.Parents != null && dto.Parents.Any())
+            // Parents 
+            if (dto.Parents != null && dto.Parents.Count > 0)
             {
                 foreach (var parentDto in dto.Parents)
                 {
+                    if (string.IsNullOrEmpty(parentDto.FullName))
+                        continue;
+
                     var parent = _mapper.Map<ParentDetail>(parentDto);
                     parent.StudentId = studentId;
                     await _unitOfWork.ParentDetails.AddAsync(parent);
                 }
+                await _unitOfWork.CompleteAsync();
             }
 
             // Scholarships
@@ -122,6 +133,7 @@ namespace FormBackend.Services
             }
 
             // Bank Details
+
             if (dto.BankDetails != null)
             {
                 var bank = _mapper.Map<BankDetail>(dto.BankDetails);
@@ -149,56 +161,60 @@ namespace FormBackend.Services
             }
 
             // Academic Histories
+          
             if (dto.AcademicHistories != null && dto.AcademicHistories.Any())
             {
                 foreach (var acDto in dto.AcademicHistories)
                 {
+                    // Only skip completely empty entries
+                    if (string.IsNullOrEmpty(acDto.Qualification) && string.IsNullOrEmpty(acDto.Board))
+                        continue;
+
+                    // Save uploaded files if they exist
                     if (acDto.Marksheet != null)
                         acDto.MarksheetPath = await FileHelper.SaveDocumentAsync(acDto.Marksheet, _wwwrootPath, "documents");
 
                     if (acDto.Provisional != null)
                         acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "documents");
 
+                    // Map to entity and assign StudentId
                     var academic = _mapper.Map<AcademicHistory>(acDto);
                     academic.StudentId = studentId;
+
                     await _unitOfWork.AcademicHistories.AddAsync(academic);
                 }
             }
 
             // Program Enrollment & Academic Sessions
-            if (dto.ProgramEnrollments != null && dto.ProgramEnrollments.Any())
+            var enrollmentDto = dto.ProgramEnrollments; // single enrollment
+            var enrollment = new ProgramEnrollment
             {
-                foreach (var enrollmentDto in dto.ProgramEnrollments)
+                StudentId = studentId,
+                Faculty = enrollmentDto.Faculty,
+                DegreeProgram = enrollmentDto.DegreeProgram,
+                EnrollmentDate = enrollmentDto.EnrollmentDate,
+                RegistrationNumber = enrollmentDto.RegistrationNumber
+            };
+
+            await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
+            await _unitOfWork.CompleteAsync(); // get enrollment id
+            int enrollmentId = enrollment.Id;
+
+            // Academic sessions
+            if (enrollmentDto.AcademicSessions != null && enrollmentDto.AcademicSessions.Any())
+            {
+                foreach (var sessionDto in enrollmentDto.AcademicSessions)
                 {
-                    var enrollment = new ProgramEnrollment
+                    var session = new AcademicSession
                     {
-                        StudentId = studentId,
-                        Faculty = enrollmentDto.Faculty,
-                        DegreeProgram = enrollmentDto.DegreeProgram,
-                        EnrollmentDate = enrollmentDto.EnrollmentDate,
-                        RegistrationNumber = enrollmentDto.RegistrationNumber
+                        ProgramEnrollmentId = enrollmentId,
+                        AcademicYear = sessionDto.AcademicYear,
+                        Semester = sessionDto.Semester,
+                        Section = sessionDto.Section,
+                        RollNumber = sessionDto.RollNumber,
+                        Status = sessionDto.Status
                     };
-
-                    await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
-                    await _unitOfWork.CompleteAsync(); // get enrollment id
-                    int enrollmentId = enrollment.Id;
-
-                    if (enrollmentDto.AcademicSessions != null && enrollmentDto.AcademicSessions.Any())
-                    {
-                        foreach (var sessionDto in enrollmentDto.AcademicSessions)
-                        {
-                            var session = new AcademicSession
-                            {
-                                ProgramEnrollmentId = enrollmentId,
-                                AcademicYear = sessionDto.AcademicYear,
-                                Semester = sessionDto.Semester,
-                                Section = sessionDto.Section,
-                                RollNumber = sessionDto.RollNumber,
-                                Status = sessionDto.Status
-                            };
-                            await _unitOfWork.AcademicSessions.AddAsync(session);
-                        }
-                    }
+                    await _unitOfWork.AcademicSessions.AddAsync(session);
                 }
             }
 
@@ -217,8 +233,10 @@ namespace FormBackend.Services
             // 4. Return full DTO
             return await GetStudentByIdAsync(studentId)!;
         }
-// Get full student by ID
-        public async Task<StudentFullDto?> GetStudentByIdAsync(int id)
+
+
+        // Get full student by ID
+        public async Task<StudentFullDto> GetStudentByIdAsync(int id)
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
             if (student == null) return null;
@@ -230,22 +248,13 @@ namespace FormBackend.Services
             var emergency = (await _unitOfWork.Emergencies.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var academicHistories = await _unitOfWork.AcademicHistories.FindAsync(a => a.StudentId == id);
             var addresses = await _unitOfWork.Addresses.FindAsync(a => a.StudentId == id);
-            var parents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == id);
+            var parents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == id);  // Get all parents
             var scholarship = (await _unitOfWork.Scholarships.FindAsync(s => s.StudentId == id)).FirstOrDefault();
             var bank = (await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == id)).FirstOrDefault();
-            var extraInfo = await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == id);
+            var extraInfo = (await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var achievements = await _unitOfWork.Achievements.FindAsync(a => a.StudentId == id);
-
-            // ProgramEnrollments + AcademicSessions
-            var enrollments = await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == id);
-            var programEnrollments = new List<ProgramEnrollmentDto>();
-            foreach (var enrollment in enrollments)
-            {
-                var sessions = await _unitOfWork.AcademicSessions.FindAsync(s => s.ProgramEnrollmentId == enrollment.Id);
-                var enrollmentDto = _mapper.Map<ProgramEnrollmentDto>(enrollment);
-                enrollmentDto.AcademicSessions = _mapper.Map<List<AcademicSessionDto>>(sessions);
-                programEnrollments.Add(enrollmentDto);
-            }
+            var enrollment = (await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == id)).FirstOrDefault();
+            var declaration = (await _unitOfWork.Declarations.FindAsync(d => d.StudentId == id)).FirstOrDefault();
 
             return new StudentFullDto
             {
@@ -256,13 +265,14 @@ namespace FormBackend.Services
                 Ethnicity = _mapper.Map<EthnicityDto>(ethnicity),
                 Emergency = _mapper.Map<EmergencyDto>(emergency),
                 Addresses = _mapper.Map<List<AddressDto>>(addresses),
-                Parents = _mapper.Map<List<ParentDetailDto>>(parents),
+                Parents = _mapper.Map<List<ParentDetailDto>>(parents),  // Map to List
                 Scholarships = _mapper.Map<ScholarshipDto>(scholarship),
                 BankDetails = _mapper.Map<BankDetailDto>(bank),
-                StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo.FirstOrDefault()),
+                StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo),
                 Achievements = _mapper.Map<List<AchievementDto>>(achievements),
                 AcademicHistories = _mapper.Map<List<AcademicHistoryDto>>(academicHistories),
-                ProgramEnrollments = programEnrollments
+                ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollment),
+                Declaration = _mapper.Map<DeclarationDto>(declaration)
             };
         }
     }

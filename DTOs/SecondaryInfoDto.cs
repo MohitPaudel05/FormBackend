@@ -10,6 +10,6 @@
         public string? MaritalStatus { get; set; }
         public string? Religion { get; set; }
 
-        public int StudentId { get; set; }
+
     }
 }

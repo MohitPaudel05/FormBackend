@@ -6,6 +6,5 @@
         public DateOnly CitizenshipIssueDate { get; set; }
         public string CitizenshipIssueDistrict { get; set; } = string.Empty;
 
-        public int StudentId { get; set; }
     }
 }

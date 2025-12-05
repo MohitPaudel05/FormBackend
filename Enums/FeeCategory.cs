@@ -2,7 +2,7 @@
 {
     public enum FeeCategory
     {
-        Regular = 1,
+        Regular ,
         SelfFinanced,
         Scholarship,
         Quota

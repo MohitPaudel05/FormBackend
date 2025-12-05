@@ -2,8 +2,8 @@
 {
     public enum ScholarshipType
     {
-        None = 0,
-        Government = 1,
+        None ,
+        Government ,
         Institutional,
         Private
     }

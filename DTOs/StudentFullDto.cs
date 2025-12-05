@@ -2,19 +2,19 @@
 {
     public class StudentFullDto
     {
-        public StudentDto Student { get; set; }
-        public SecondaryInfoDto SecondaryInfo { get; set; }
-        public EthnicityDto Ethnicity { get; set; }
-        public EmergencyDto Emergency { get; set; }
-        public DisabilityDto Disability { get; set; }
-        public CitizenShipDto Citizenship { get; set; }
+        public StudentDto Student { get; set; } = new();
+        public SecondaryInfoDto SecondaryInfo { get; set; } = new();
+        public EthnicityDto Ethnicity { get; set; } = new();
+        public EmergencyDto Emergency { get; set; } = new();
+        public DisabilityDto Disability { get; set; } = new();
+        public CitizenShipDto Citizenship { get; set; } = new();
 
         //address
-        public List<AddressDto> Addresses { get; set; } = new List<AddressDto>(); 
+        public List<AddressDto> Addresses { get; set; } = new();
 
-        public List<ParentDetailDto> Parents { get; set; } = new List<ParentDetailDto>();
+        public List<ParentDetailDto> Parents { get; set; } = new();
 
-        public List<ProgramEnrollmentDto> ProgramEnrollments { get; set; } = new();
+        public  ProgramEnrollmentDto ProgramEnrollments { get; set; } = new();
 
         public List<AcademicHistoryDto> AcademicHistories { get; set; } = new();
 
