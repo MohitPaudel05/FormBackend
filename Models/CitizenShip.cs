@@ -7,6 +7,12 @@
         public DateOnly CitizenshipIssueDate { get; set; }
         public string CitizenshipIssueDistrict { get; set; } = string.Empty;
 
+        // File uploads
+        public string CitizenshipFrontPhotoPath { get; set; } = string.Empty;
+        public string CitizenshipBackPhotoPath { get; set; } = string.Empty;
+
+
+
 
         public int StudentId { get; set; }
 

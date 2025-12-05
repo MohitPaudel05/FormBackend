@@ -7,10 +7,8 @@ namespace FormBackend.Enums
         [Display(Name = "SLC/SEE")]
         SLC,
         [Display(Name = "+2")]
-        plus,
+        Plus,
         Bachelors,
-        Masters,
-        
-
-    }    
+        Masters
+    }
 }

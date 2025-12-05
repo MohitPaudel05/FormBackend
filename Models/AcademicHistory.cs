@@ -17,13 +17,16 @@ namespace FormBackend.Models
         public string Institution { get; set; } = string.Empty;
 
         [Required]
-        public int PassedYear { get; set; }
+        public string PassedYear { get; set; } = string.Empty;  
 
         [Required]
         public DivisionGPA DivisionGPA { get; set; }
 
         public string? MarksheetPath { get; set; }
         public string? ProvisionalPath { get; set; }
+        public string? PhotoPath { get; set; }
+        public string? SignaturePath { get; set; }
+        public string? CharacterCertificatePath { get; set; }
 
         public int StudentId { get; set; }
         public Student Student { get; set; } = null!;

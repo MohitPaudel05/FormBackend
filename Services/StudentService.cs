@@ -59,9 +59,30 @@ namespace FormBackend.Services
                 disability.StudentId = studentId;
                 await _unitOfWork.Disabilities.AddAsync(disability);
             }
+            //citizenship
 
             if (dto.Citizenship != null)
             {
+                // Save citizenship front photo if provided
+                if (dto.Citizenship.CitizenshipFrontPhoto != null)
+                {
+                    dto.Citizenship.CitizenshipFrontPhotoPath = await FileHelper.SaveImageAsync(
+                        dto.Citizenship.CitizenshipFrontPhoto,
+                        _wwwrootPath,
+                        "citizenship"
+                    );
+                }
+
+                // Save citizenship back photo if provided
+                if (dto.Citizenship.CitizenshipBackPhoto != null)
+                {
+                    dto.Citizenship.CitizenshipBackPhotoPath = await FileHelper.SaveImageAsync(
+                        dto.Citizenship.CitizenshipBackPhoto,
+                        _wwwrootPath,
+                        "citizenship"
+                    );
+                }
+
                 var citizenship = _mapper.Map<CitizenShip>(dto.Citizenship);
                 citizenship.StudentId = studentId;
                 await _unitOfWork.CitizenShips.AddAsync(citizenship);
@@ -161,7 +182,6 @@ namespace FormBackend.Services
             }
 
             // Academic Histories
-          
             if (dto.AcademicHistories != null && dto.AcademicHistories.Any())
             {
                 foreach (var acDto in dto.AcademicHistories)
@@ -177,6 +197,16 @@ namespace FormBackend.Services
                     if (acDto.Provisional != null)
                         acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "documents");
 
+                    // NEW: Save photo, signature, and character certificate
+                    if (acDto.Photo != null)
+                        acDto.PhotoPath = await FileHelper.SaveImageAsync(acDto.Photo, _wwwrootPath, "academic");
+
+                    if (acDto.Signature != null)
+                        acDto.SignaturePath = await FileHelper.SaveSignatureAsync(acDto.Signature, _wwwrootPath, "academic");
+
+                    if (acDto.CharacterCertificate != null)
+                        acDto.CharacterCertificatePath = await FileHelper.SaveDocumentAsync(acDto.CharacterCertificate, _wwwrootPath, "documents");
+
                     // Map to entity and assign StudentId
                     var academic = _mapper.Map<AcademicHistory>(acDto);
                     academic.StudentId = studentId;
@@ -184,37 +214,25 @@ namespace FormBackend.Services
                     await _unitOfWork.AcademicHistories.AddAsync(academic);
                 }
             }
-
             // Program Enrollment & Academic Sessions
-            var enrollmentDto = dto.ProgramEnrollments; // single enrollment
-            var enrollment = new ProgramEnrollment
+            if (dto.ProgramEnrollments != null)
             {
-                StudentId = studentId,
-                Faculty = enrollmentDto.Faculty,
-                DegreeProgram = enrollmentDto.DegreeProgram,
-                EnrollmentDate = enrollmentDto.EnrollmentDate,
-                RegistrationNumber = enrollmentDto.RegistrationNumber
-            };
+                var enrollment = _mapper.Map<ProgramEnrollment>(dto.ProgramEnrollments);
+                enrollment.StudentId = studentId;
+                enrollment.EnrollmentDate = DateTime.Now;
 
-            await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
-            await _unitOfWork.CompleteAsync(); // get enrollment id
-            int enrollmentId = enrollment.Id;
+                await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
+                await _unitOfWork.CompleteAsync();  // SAVE FIRST to get the ID
 
-            // Academic sessions
-            if (enrollmentDto.AcademicSessions != null && enrollmentDto.AcademicSessions.Any())
-            {
-                foreach (var sessionDto in enrollmentDto.AcademicSessions)
+                // Now enrollment.Id has the correct value
+                if (dto.ProgramEnrollments.AcademicSessions != null && dto.ProgramEnrollments.AcademicSessions.Any())
                 {
-                    var session = new AcademicSession
+                    foreach (var sessionDto in dto.ProgramEnrollments.AcademicSessions)
                     {
-                        ProgramEnrollmentId = enrollmentId,
-                        AcademicYear = sessionDto.AcademicYear,
-                        Semester = sessionDto.Semester,
-                        Section = sessionDto.Section,
-                        RollNumber = sessionDto.RollNumber,
-                        Status = sessionDto.Status
-                    };
-                    await _unitOfWork.AcademicSessions.AddAsync(session);
+                        var session = _mapper.Map<AcademicSession>(sessionDto);
+                        session.ProgramEnrollmentId = enrollment.Id;  // Now this has the correct ID
+                        await _unitOfWork.AcademicSessions.AddAsync(session);
+                    }
                 }
             }
 
