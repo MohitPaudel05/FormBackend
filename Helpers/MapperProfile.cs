@@ -48,9 +48,13 @@ namespace FormBackend.Helpers
 
             // Disability
             CreateMap<Disability, DisabilityDto>()
-                .ForMember(dest => dest.DisabilityStatus, opt => opt.MapFrom(src => src.DisabilityStatus.ToString()))
+                .ForMember(dest => dest.DisabilityStatus,
+                    opt => opt.MapFrom(src => src.DisabilityStatus.ToString()))
                 .ReverseMap()
-                .ForMember(dest => dest.DisabilityStatus, opt => opt.MapFrom(src => Enum.Parse<DisabilityStatus>(src.DisabilityStatus)));
+                .ForMember(dest => dest.DisabilityStatus,
+                    opt => opt.MapFrom(src => string.IsNullOrEmpty(src.DisabilityStatus)
+                        ? DisabilityStatus.None
+                        : Enum.Parse<DisabilityStatus>(src.DisabilityStatus, true)));
 
             // CitizenShip
             CreateMap<CitizenShipDto, CitizenShip>()

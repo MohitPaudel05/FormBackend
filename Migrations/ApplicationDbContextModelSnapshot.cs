@@ -34,6 +34,9 @@ namespace FormBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CharacterCertificatePath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("DivisionGPA")
                         .HasColumnType("int");
 
@@ -44,14 +47,21 @@ namespace FormBackend.Migrations
                     b.Property<string>("MarksheetPath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PassedYear")
-                        .HasColumnType("int");
+                    b.Property<string>("PassedYear")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhotoPath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProvisionalPath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Qualification")
                         .HasColumnType("int");
+
+                    b.Property<string>("SignaturePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -211,6 +221,14 @@ namespace FormBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CitizenshipBackPhotoPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CitizenshipFrontPhotoPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateOnly>("CitizenshipIssueDate")
                         .HasColumnType("date");
 
@@ -301,9 +319,8 @@ namespace FormBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EmergencyContactRelation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmergencyContactRelation")
+                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");

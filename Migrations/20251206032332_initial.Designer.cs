@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FormBackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251201093548_afterachivement")]
-    partial class afterachivement
+    [Migration("20251206032332_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,92 @@ namespace FormBackend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("FormBackend.Models.AcademicHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Board")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CharacterCertificatePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DivisionGPA")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Institution")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MarksheetPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PassedYear")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhotoPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProvisionalPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Qualification")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SignaturePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("AcademicHistories");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.AcademicSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AcademicYear")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProgramEnrollmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RollNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Semester")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgramEnrollmentId");
+
+                    b.ToTable("AcademicSessions");
+                });
 
             modelBuilder.Entity("FormBackend.Models.Achievement", b =>
                 {
@@ -138,6 +224,14 @@ namespace FormBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CitizenshipBackPhotoPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CitizenshipFrontPhotoPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateOnly>("CitizenshipIssueDate")
                         .HasColumnType("date");
 
@@ -157,6 +251,32 @@ namespace FormBackend.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("CitizenShips");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.Declaration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("DateOfApplication")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsAgreed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Place")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Declarations");
                 });
 
             modelBuilder.Entity("FormBackend.Models.Disability", b =>
@@ -202,9 +322,8 @@ namespace FormBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EmergencyContactRelation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EmergencyContactRelation")
+                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -256,7 +375,7 @@ namespace FormBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FamilyIncome")
+                    b.Property<int?>("FamilyIncome")
                         .HasColumnType("int");
 
                     b.Property<string>("FullName")
@@ -286,6 +405,38 @@ namespace FormBackend.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("ParentDetails");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.ProgramEnrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DegreeProgram")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Faculty")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RegistrationNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId")
+                        .IsUnique();
+
+                    b.ToTable("ProgramEnrollments");
                 });
 
             modelBuilder.Entity("FormBackend.Models.Scholarship", b =>
@@ -427,6 +578,28 @@ namespace FormBackend.Migrations
                     b.ToTable("StudentExtraInfos");
                 });
 
+            modelBuilder.Entity("FormBackend.Models.AcademicHistory", b =>
+                {
+                    b.HasOne("FormBackend.Models.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.AcademicSession", b =>
+                {
+                    b.HasOne("FormBackend.Models.ProgramEnrollment", "ProgramEnrollment")
+                        .WithMany("AcademicSessions")
+                        .HasForeignKey("ProgramEnrollmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProgramEnrollment");
+                });
+
             modelBuilder.Entity("FormBackend.Models.Achievement", b =>
                 {
                     b.HasOne("FormBackend.Models.Student", "Student")
@@ -515,6 +688,17 @@ namespace FormBackend.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("FormBackend.Models.ProgramEnrollment", b =>
+                {
+                    b.HasOne("FormBackend.Models.Student", "Student")
+                        .WithOne("ProgramEnrollment")
+                        .HasForeignKey("FormBackend.Models.ProgramEnrollment", "StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("FormBackend.Models.Scholarship", b =>
                 {
                     b.HasOne("FormBackend.Models.Student", "Student")
@@ -546,6 +730,16 @@ namespace FormBackend.Migrations
                         .IsRequired();
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.ProgramEnrollment", b =>
+                {
+                    b.Navigation("AcademicSessions");
+                });
+
+            modelBuilder.Entity("FormBackend.Models.Student", b =>
+                {
+                    b.Navigation("ProgramEnrollment");
                 });
 #pragma warning restore 612, 618
         }
