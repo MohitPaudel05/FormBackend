@@ -1,7 +1,13 @@
-﻿namespace FormBackend.DTOs
+﻿using System.Text.Json.Serialization;
+
+namespace FormBackend.DTOs
 {
     public class StudentDto
+
+
     {
+        public int Id { get; set; }
+        [JsonIgnore]
         public IFormFile? Image { get; set; }   // For upload
         public string? ImagePath { get; set; }  // For display
 

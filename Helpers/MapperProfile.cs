@@ -58,25 +58,24 @@ namespace FormBackend.Helpers
 
             // CitizenShip
             CreateMap<CitizenShipDto, CitizenShip>()
-               .ForMember(dest => dest.CitizenshipFrontPhotoPath, opt => opt.Ignore())
-           .ForMember(dest => dest.CitizenshipBackPhotoPath, opt => opt.Ignore())
-          .ReverseMap();
+                .ForMember(dest => dest.CitizenshipFrontPhotoPath, opt => opt.MapFrom(src => src.CitizenshipFrontPhotoPath))
+                .ForMember(dest => dest.CitizenshipBackPhotoPath, opt => opt.MapFrom(src => src.CitizenshipBackPhotoPath))
+                .ReverseMap()
+                .ForMember(dest => dest.CitizenshipFrontPhoto, opt => opt.Ignore())
+                .ForMember(dest => dest.CitizenshipBackPhoto, opt => opt.Ignore());
 
 
 
 
             // ===== ADDRESS =====
             CreateMap<AddressDto, Address>()
-                .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => Enum.Parse<AddressType>(src.AddressType)))
-                .ForMember(dest => dest.Province, opt => opt.MapFrom(src => Enum.Parse<Province>(src.Province)))
-                .ForMember(dest => dest.District, opt => opt.MapFrom(src => src.District))
-                .ForMember(dest => dest.Municipality, opt => opt.MapFrom(src => src.Municipality))
-                .ForMember(dest => dest.WardNumber, opt => opt.MapFrom(src => src.WardNumber))
-                .ForMember(dest => dest.Tole, opt => opt.MapFrom(src => src.Tole))
-                .ForMember(dest => dest.HouseNumber, opt => opt.MapFrom(src => src.HouseNumber))
-                .ReverseMap()
-                .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType.ToString()))
-                .ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province.ToString()));
+            .ForMember(dest => dest.Province, opt => opt.MapFrom(src =>
+             Enum.Parse<Province>(src.Province, true)))  // Remove 'ignoreCase:' - use positional argument
+            .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src =>
+            Enum.Parse<AddressType>(src.AddressType, true)))  // Add AddressType mapping too
+           .ReverseMap()
+           .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType.ToString()))
+           .ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province.ToString()));
             // ===== PARENT DETAIL =====
             CreateMap<ParentDetailDto, ParentDetail>()
                 .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => Enum.Parse<ParentType>(src.ParentType)))
@@ -128,41 +127,48 @@ namespace FormBackend.Helpers
           opt => opt.MapFrom(src => string.Join(",", src.ExtracurricularInterests)));
 
             //declaration mapping
-            CreateMap<Declaration, DeclarationDto>().ReverseMap();
+            CreateMap<DeclarationDto, Declaration>()
+    .ForMember(dest => dest.IsAgreed, opt => opt.MapFrom(src => src.IsAgreed))
+    .ReverseMap()
+    .ForMember(dest => dest.IsAgreed, opt => opt.MapFrom(src => src.IsAgreed));
 
-            // ProgramEnrollment ↔ ProgramEnrollmentDto
-            //CreateMap<ProgramEnrollment, ProgramEnrollmentDto>()
-            //    .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
-            //    .ReverseMap()
-            //    .ForMember(dest => dest.Id, opt => opt.Ignore())
-            //    .ForMember(dest => dest.Student, opt => opt.Ignore());
-            // Enrollment
+
             // Program Enrollment
             CreateMap<ProgramEnrollment, ProgramEnrollmentDto>()
-                .ForMember(dest => dest.Faculty, opt => opt.MapFrom(src => src.Faculty.ToString()))
-                .ForMember(dest => dest.DegreeProgram, opt => opt.MapFrom(src => src.DegreeProgram.ToString()))
-                .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
-                .ReverseMap()
-                .ForMember(dest => dest.Faculty, opt => opt.MapFrom(src => Enum.Parse<Faculty>(src.Faculty, true)))
-                .ForMember(dest => dest.DegreeProgram, opt => opt.MapFrom(src => Enum.Parse<DegreeProgram>(src.DegreeProgram, true)))
-                .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions));
+      .ForMember(dest => dest.Faculty, opt => opt.MapFrom(src => src.Faculty.ToString()))
+      .ForMember(dest => dest.DegreeProgram, opt => opt.MapFrom(src => src.DegreeProgram.ToString()))
+      .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions))
+      .ReverseMap()
+      .ForMember(dest => dest.Faculty, opt => opt.MapFrom(src =>
+          string.IsNullOrEmpty(src.Faculty)
+              ? Faculty.Science
+              : Enum.Parse<Faculty>(src.Faculty.Replace(" ", ""), true)))
+      .ForMember(dest => dest.DegreeProgram, opt => opt.MapFrom(src =>
+          string.IsNullOrEmpty(src.DegreeProgram)
+              ? DegreeProgram.BSc
+              : Enum.Parse<DegreeProgram>(src.DegreeProgram.Replace(" ", ""), true)))
+      .ForMember(dest => dest.AcademicSessions, opt => opt.MapFrom(src => src.AcademicSessions));
 
             // Academic Session
             CreateMap<AcademicSession, AcademicSessionDto>()
-                .ForMember(dest => dest.AcademicYear, opt => opt.MapFrom(src => src.AcademicYear.ToString()))
-                .ForMember(dest => dest.Semester, opt => opt.MapFrom(src => src.Semester.ToString()))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ReverseMap()
-                .ForMember(dest => dest.AcademicYear, opt => opt.MapFrom(src => Enum.Parse<AcademicYear>(src.AcademicYear, true)))
-                .ForMember(dest => dest.Semester, opt => opt.MapFrom(src => Enum.Parse<Semester>(src.Semester, true)))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => Enum.Parse<AcademicStatus>(src.Status, true)));
+    .ForMember(dest => dest.AcademicYear, opt => opt.MapFrom(src => src.AcademicYear.ToString()))
+    .ForMember(dest => dest.Semester, opt => opt.MapFrom(src => src.Semester.ToString()))
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+    .ReverseMap()
+    .ForMember(dest => dest.AcademicYear, opt => opt.MapFrom(src =>
+        string.IsNullOrEmpty(src.AcademicYear)
+            ? AcademicYear.FirstYear
+            : Enum.Parse<AcademicYear>(src.AcademicYear.Replace(" ", ""), true)))
+    .ForMember(dest => dest.Semester, opt => opt.MapFrom(src =>
+        string.IsNullOrEmpty(src.Semester)
+            ? Semester.FirstSemester
+            : Enum.Parse<Semester>(src.Semester.Replace(" ", ""), true)))
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src =>
+        string.IsNullOrEmpty(src.Status)
+            ? AcademicStatus.Active
+            : Enum.Parse<AcademicStatus>(src.Status.Replace(" ", ""), true)));
 
 
-            // AcademicSession ↔ AcademicSessionDto
-            //CreateMap<AcademicSession, AcademicSessionDto>()
-            //    .ReverseMap()
-            //    .ForMember(dest => dest.Id, opt => opt.Ignore())
-            //    .ForMember(dest => dest.ProgramEnrollment, opt => opt.Ignore());
 
 
 

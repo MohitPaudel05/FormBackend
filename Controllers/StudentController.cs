@@ -37,6 +37,29 @@ namespace FormBackend.Controllers
 
             return Ok(student);
         }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStudent(int id)
+        {
+            var exists = await _studentService.GetStudentByIdAsync(id);
+            if (exists == null)
+                return NotFound($"Student with ID {id} not found.");
+
+            var deleted = await _studentService.DeleteStudentAsync(id);
+
+            if (!deleted)
+                return StatusCode(500, "Failed to delete the student.");
+
+            return NoContent();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllStudents()
+        {
+            var students = await _studentService.GetAllStudentsAsync();
+            return Ok(students);
+        }
     }
 }
 

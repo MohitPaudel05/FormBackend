@@ -35,7 +35,7 @@ namespace FormBackend.Services
                 dto.Student.ImagePath = await FileHelper.SaveImageAsync(
                     dto.Student.Image,
                     _wwwrootPath,
-                    _imageFolder
+                    "images"
                 );
             }
 
@@ -103,31 +103,54 @@ namespace FormBackend.Services
             }
 
             // Addresses - Now iterates through List<AddressDto>
-            if (dto.Addresses != null && dto.Addresses.Count > 0)
+            if (dto.Addresses != null && dto.Addresses.Any())
             {
-                foreach (var addressDto in dto.Addresses)
+                // Find permanent and temporary addresses
+                var permanentAddressDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "Permanent");
+                var temporaryAddressDto = dto.Addresses.FirstOrDefault(a =>
+                    a.AddressType == "Temporary" || a.AddressType == "SameAsPermanent");
+
+                if (permanentAddressDto != null && temporaryAddressDto != null)
                 {
-                    // Skip empty addresses (e.g., when SameAsPermanent is selected, we may not need temporary)
-                    if (string.IsNullOrEmpty(addressDto.District))
-                        continue;
+                    // Check if addresses are identical
+                    bool isSameAddress =
+                        permanentAddressDto.Province == temporaryAddressDto.Province &&
+                        permanentAddressDto.District == temporaryAddressDto.District &&
+                        permanentAddressDto.Municipality == temporaryAddressDto.Municipality &&
+                        permanentAddressDto.WardNumber == temporaryAddressDto.WardNumber &&
+                        permanentAddressDto.Tole == temporaryAddressDto.Tole &&
+                        permanentAddressDto.HouseNumber == temporaryAddressDto.HouseNumber;
 
-                    var address = new Address
+                    if (isSameAddress)
                     {
-                        StudentId = studentId,
-                        District = addressDto.District,
-                        Municipality = addressDto.Municipality,
-                        Province = Enum.Parse<Province>(addressDto.Province),
-                        WardNumber = addressDto.WardNumber,
-                        Tole = addressDto.Tole,
-                        HouseNumber = addressDto.HouseNumber
-                    };
+                        // Store only ONE address with type "SameAsPermanent"
+                        var address = _mapper.Map<Address>(permanentAddressDto);
+                        address.StudentId = studentId;
+                        address.AddressType = AddressType.SameAsPermanent;
+                        await _unitOfWork.Addresses.AddAsync(address);
+                    }
+                    else
+                    {
+                        // Store TWO addresses - Permanent and Temporary
+                        var permanentAddress = _mapper.Map<Address>(permanentAddressDto);
+                        permanentAddress.StudentId = studentId;
+                        permanentAddress.AddressType = AddressType.Permanent;
+                        await _unitOfWork.Addresses.AddAsync(permanentAddress);
 
-                    // Determine AddressType
-                    address.AddressType = Enum.Parse<AddressType>(addressDto.AddressType);
-
+                        var temporaryAddress = _mapper.Map<Address>(temporaryAddressDto);
+                        temporaryAddress.StudentId = studentId;
+                        temporaryAddress.AddressType = AddressType.Temporary;
+                        await _unitOfWork.Addresses.AddAsync(temporaryAddress);
+                    }
+                }
+                else if (permanentAddressDto != null)
+                {
+                    // Only Permanent address exists
+                    var address = _mapper.Map<Address>(permanentAddressDto);
+                    address.StudentId = studentId;
+                    address.AddressType = AddressType.Permanent;
                     await _unitOfWork.Addresses.AddAsync(address);
                 }
-                await _unitOfWork.CompleteAsync();
             }
 
             // Parents 
@@ -192,10 +215,10 @@ namespace FormBackend.Services
 
                     // Save uploaded files if they exist
                     if (acDto.Marksheet != null)
-                        acDto.MarksheetPath = await FileHelper.SaveDocumentAsync(acDto.Marksheet, _wwwrootPath, "documents");
+                        acDto.MarksheetPath = await FileHelper.SaveDocumentAsync(acDto.Marksheet, _wwwrootPath, "academic");
 
                     if (acDto.Provisional != null)
-                        acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "documents");
+                        acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "academic");
 
                     // NEW: Save photo, signature, and character certificate
                     if (acDto.Photo != null)
@@ -205,7 +228,7 @@ namespace FormBackend.Services
                         acDto.SignaturePath = await FileHelper.SaveSignatureAsync(acDto.Signature, _wwwrootPath, "academic");
 
                     if (acDto.CharacterCertificate != null)
-                        acDto.CharacterCertificatePath = await FileHelper.SaveDocumentAsync(acDto.CharacterCertificate, _wwwrootPath, "documents");
+                        acDto.CharacterCertificatePath = await FileHelper.SaveDocumentAsync(acDto.CharacterCertificate, _wwwrootPath, "academic");
 
                     // Map to entity and assign StudentId
                     var academic = _mapper.Map<AcademicHistory>(acDto);
@@ -292,6 +315,27 @@ namespace FormBackend.Services
                 ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollment),
                 Declaration = _mapper.Map<DeclarationDto>(declaration)
             };
+        }
+
+        //delete student by id
+
+        public async Task<bool> DeleteStudentAsync(int id)
+        {
+            var student = await _unitOfWork.Students.GetByIdAsync(id);
+            if (student == null)
+                return false;
+
+            _unitOfWork.Students.Delete(student);
+
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        //get all students
+        public async Task<IEnumerable<StudentDto>> GetAllStudentsAsync()
+        {
+            var students = await _unitOfWork.Students.GetAllAsync();
+            return _mapper.Map<IEnumerable<StudentDto>>(students);
         }
     }
 }

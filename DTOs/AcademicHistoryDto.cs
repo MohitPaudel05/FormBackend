@@ -1,4 +1,5 @@
 ﻿using FormBackend.Enums;
+using System.Text.Json.Serialization;
 
 namespace FormBackend.DTOs
 {
@@ -9,11 +10,15 @@ namespace FormBackend.DTOs
         public string Institution { get; set; }
         public string PassedYear { get; set; }     
         public string DivisionGPA { get; set; }   
-
+        [JsonIgnore]
         public IFormFile? Marksheet { get; set; }
+        [JsonIgnore]
         public IFormFile? Provisional { get; set; }
-        public IFormFile? Photo { get; set; }           
-        public IFormFile? Signature { get; set; }      
+        [JsonIgnore]
+        public IFormFile? Photo { get; set; }
+        [JsonIgnore]
+        public IFormFile? Signature { get; set; }
+        [JsonIgnore]
         public IFormFile? CharacterCertificate { get; set; }  
 
         public string MarksheetPath { get; set; } = string.Empty;

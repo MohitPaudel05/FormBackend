@@ -6,5 +6,9 @@ namespace FormBackend.Services
     {
         Task<StudentFullDto> AddStudentAsync(StudentFullDto studentDto);
         Task<StudentFullDto?> GetStudentByIdAsync(int studentId);
+
+        Task<IEnumerable<StudentDto>> GetAllStudentsAsync();
+        Task<bool> DeleteStudentAsync(int id);
+
     }
 }
