@@ -60,6 +60,18 @@ namespace FormBackend.Controllers
             var students = await _studentService.GetAllStudentsAsync();
             return Ok(students);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStudent(int id, [FromForm] StudentFullDto dto)
+        {
+            var updated = await _studentService.UpdateStudentAsync(id, dto);
+
+            if (updated == null)
+                return NotFound(new { message = "Student not found" });
+
+            return Ok(updated);
+        }
+
     }
 }
 

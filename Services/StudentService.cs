@@ -6,6 +6,7 @@ using FormBackend.Models;
 using FormBackend.Unit_Of_Work;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.IdentityModel.Tokens;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -289,7 +290,7 @@ namespace FormBackend.Services
             var emergency = (await _unitOfWork.Emergencies.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var academicHistories = await _unitOfWork.AcademicHistories.FindAsync(a => a.StudentId == id);
             var addresses = await _unitOfWork.Addresses.FindAsync(a => a.StudentId == id);
-            var parents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == id);  // Get all parents
+            var parents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == id);
             var scholarship = (await _unitOfWork.Scholarships.FindAsync(s => s.StudentId == id)).FirstOrDefault();
             var bank = (await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == id)).FirstOrDefault();
             var extraInfo = (await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == id)).FirstOrDefault();
@@ -300,20 +301,20 @@ namespace FormBackend.Services
             return new StudentFullDto
             {
                 Student = _mapper.Map<StudentDto>(student),
-                SecondaryInfo = _mapper.Map<SecondaryInfoDto>(secondary),
-                Disability = _mapper.Map<DisabilityDto>(disability),
-                Citizenship = _mapper.Map<CitizenShipDto>(citizenship),
-                Ethnicity = _mapper.Map<EthnicityDto>(ethnicity),
-                Emergency = _mapper.Map<EmergencyDto>(emergency),
-                Addresses = _mapper.Map<List<AddressDto>>(addresses),
-                Parents = _mapper.Map<List<ParentDetailDto>>(parents),  // Map to List
-                Scholarships = _mapper.Map<ScholarshipDto>(scholarship),
-                BankDetails = _mapper.Map<BankDetailDto>(bank),
-                StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo),
-                Achievements = _mapper.Map<List<AchievementDto>>(achievements),
-                AcademicHistories = _mapper.Map<List<AcademicHistoryDto>>(academicHistories),
-                ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollment),
-                Declaration = _mapper.Map<DeclarationDto>(declaration)
+                SecondaryInfo = _mapper.Map<SecondaryInfoDto>(secondary) ?? new SecondaryInfoDto(),
+                Disability = _mapper.Map<DisabilityDto>(disability) ?? new DisabilityDto(),
+                Citizenship = _mapper.Map<CitizenShipDto>(citizenship) ?? new CitizenShipDto(),
+                Ethnicity = _mapper.Map<EthnicityDto>(ethnicity) ?? new EthnicityDto(),
+                Emergency = _mapper.Map<EmergencyDto>(emergency) ?? new EmergencyDto(),
+                Addresses = _mapper.Map<List<AddressDto>>(addresses) ?? new List<AddressDto>(),
+                Parents = _mapper.Map<List<ParentDetailDto>>(parents) ?? new List<ParentDetailDto>(),
+                Scholarships = _mapper.Map<ScholarshipDto>(scholarship) ?? new ScholarshipDto(),
+                BankDetails = _mapper.Map<BankDetailDto>(bank) ?? new BankDetailDto(),
+                StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo) ?? new StudentExtraInfoDto(),
+                Achievements = _mapper.Map<List<AchievementDto>>(achievements) ?? new List<AchievementDto>(),
+                AcademicHistories = _mapper.Map<List<AcademicHistoryDto>>(academicHistories) ?? new List<AcademicHistoryDto>(),
+                ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollment) ?? new ProgramEnrollmentDto(),
+                Declaration = _mapper.Map<DeclarationDto>(declaration) ?? new DeclarationDto()
             };
         }
 
@@ -337,5 +338,351 @@ namespace FormBackend.Services
             var students = await _unitOfWork.Students.GetAllAsync();
             return _mapper.Map<IEnumerable<StudentDto>>(students);
         }
+        public async Task<StudentFullDto?> UpdateStudentAsync(int studentId, StudentFullDto dto)
+        {
+            var student = await _unitOfWork.Students.GetByIdAsync(studentId);
+            if (student == null)
+                return null;
+
+            // ------------ UPDATE STUDENT TABLE ------------
+            if (dto.Student != null)
+            {
+                // Handle new image upload
+                if (dto.Student.Image != null)
+                {
+                    dto.Student.ImagePath = await FileHelper.SaveImageAsync(
+                        dto.Student.Image,
+                        _wwwrootPath,
+                        "images"
+                    );
+                }
+                else
+                {
+                    // Keep old path
+                    dto.Student.ImagePath = student.ImagePath;
+                }
+
+                _mapper.Map(dto.Student, student);
+                _unitOfWork.Students.Update(student);
+            }
+
+            // ------------ UPDATE SECONDARY INFO ------------
+            if (dto.SecondaryInfo != null)
+            {
+                var secondary = (await _unitOfWork.SecondaryInfos.FindAsync(x => x.StudentId == studentId))
+                    .FirstOrDefault();
+                if (secondary != null)
+                {
+                    _mapper.Map(dto.SecondaryInfo, secondary);
+                    _unitOfWork.SecondaryInfos.Update(secondary);
+                }
+                else
+                {
+                    var newSecondary = _mapper.Map<SecondaryInfo>(dto.SecondaryInfo);
+                    newSecondary.StudentId = studentId;
+                    await _unitOfWork.SecondaryInfos.AddAsync(newSecondary);
+                }
+            }
+
+            // ------------ UPDATE DISABILITY ------------
+            if (dto.Disability != null)
+            {
+                var disability = (await _unitOfWork.Disabilities.FindAsync(x => x.StudentId == studentId))
+                    .FirstOrDefault();
+                if (disability != null)
+                {
+                    _mapper.Map(dto.Disability, disability);
+                    _unitOfWork.Disabilities.Update(disability);
+                }
+                else
+                {
+                    var newDisability = _mapper.Map<Disability>(dto.Disability);
+                    newDisability.StudentId = studentId;
+                    await _unitOfWork.Disabilities.AddAsync(newDisability);
+                }
+            }
+
+            // ------------ UPDATE CITIZENSHIP (with photo upload) ------------
+            if (dto.Citizenship != null)
+            {
+                var citizenship = (await _unitOfWork.CitizenShips.FindAsync(x => x.StudentId == studentId))
+                    .FirstOrDefault();
+
+                // Save citizenship front photo if provided
+                if (dto.Citizenship.CitizenshipFrontPhoto != null)
+                {
+                    dto.Citizenship.CitizenshipFrontPhotoPath = await FileHelper.SaveImageAsync(
+                        dto.Citizenship.CitizenshipFrontPhoto, _wwwrootPath, "citizenship");
+                }
+
+                // Save citizenship back photo if provided
+                if (dto.Citizenship.CitizenshipBackPhoto != null)
+                {
+                    dto.Citizenship.CitizenshipBackPhotoPath = await FileHelper.SaveImageAsync(
+                        dto.Citizenship.CitizenshipBackPhoto, _wwwrootPath, "citizenship");
+                }
+
+                if (citizenship != null)
+                {
+                    _mapper.Map(dto.Citizenship, citizenship);
+                    _unitOfWork.CitizenShips.Update(citizenship);
+                }
+                else
+                {
+                    var newCitizenship = _mapper.Map<CitizenShip>(dto.Citizenship);
+                    newCitizenship.StudentId = studentId;
+                    await _unitOfWork.CitizenShips.AddAsync(newCitizenship);
+                }
+            }
+
+            // ------------ UPDATE ETHNICITY ------------
+            if (dto.Ethnicity != null)
+            {
+                var ethnicity = (await _unitOfWork.Ethnicities.FindAsync(x => x.StudentId == studentId))
+                    .FirstOrDefault();
+                if (ethnicity != null)
+                {
+                    _mapper.Map(dto.Ethnicity, ethnicity);
+                    _unitOfWork.Ethnicities.Update(ethnicity);
+                }
+                else
+                {
+                    var newEthnicity = _mapper.Map<Ethnicity>(dto.Ethnicity);
+                    newEthnicity.StudentId = studentId;
+                    await _unitOfWork.Ethnicities.AddAsync(newEthnicity);
+                }
+            }
+
+            // ------------ UPDATE EMERGENCY ------------
+            if (dto.Emergency != null)
+            {
+                var emergency = (await _unitOfWork.Emergencies.FindAsync(x => x.StudentId == studentId))
+                    .FirstOrDefault();
+                if (emergency != null)
+                {
+                    _mapper.Map(dto.Emergency, emergency);
+                    _unitOfWork.Emergencies.Update(emergency);
+                }
+                else
+                {
+                    var newEmergency = _mapper.Map<Emergency>(dto.Emergency);
+                    newEmergency.StudentId = studentId;
+                    await _unitOfWork.Emergencies.AddAsync(newEmergency);
+                }
+            }
+
+            // ------------ UPDATE ADDRESSES (Delete old, add new) ------------
+            if (dto.Addresses != null && dto.Addresses.Any())
+            {
+                var existingAddresses = await _unitOfWork.Addresses.FindAsync(a => a.StudentId == studentId);
+                foreach (var addr in existingAddresses)
+                {
+                    _unitOfWork.Addresses.Delete(addr);
+                }
+
+                foreach (var addrDto in dto.Addresses)
+                {
+                    var address = _mapper.Map<Address>(addrDto);
+                    address.StudentId = studentId;
+                    await _unitOfWork.Addresses.AddAsync(address);
+                }
+            }
+
+            // ------------ UPDATE PARENTS (Delete old, add new) ------------
+            if (dto.Parents != null && dto.Parents.Any())
+            {
+                var existingParents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == studentId);
+                foreach (var parent in existingParents)
+                {
+                    _unitOfWork.ParentDetails.Delete(parent);
+                }
+
+                foreach (var parentDto in dto.Parents)
+                {
+                    if (string.IsNullOrEmpty(parentDto.FullName))
+                        continue;
+
+                    var parent = _mapper.Map<ParentDetail>(parentDto);
+                    parent.StudentId = studentId;
+                    await _unitOfWork.ParentDetails.AddAsync(parent);
+                }
+            }
+
+            // ------------ UPDATE SCHOLARSHIP (ONLY if has values) ------------
+            if (dto.Scholarships != null && !string.IsNullOrEmpty(dto.Scholarships.ScholarshipType))
+            {
+                var scholarship = (await _unitOfWork.Scholarships.FindAsync(s => s.StudentId == studentId))
+                    .FirstOrDefault();
+                if (scholarship != null)
+                {
+                    _mapper.Map(dto.Scholarships, scholarship);
+                    _unitOfWork.Scholarships.Update(scholarship);
+                }
+                else
+                {
+                    var newScholarship = _mapper.Map<Scholarship>(dto.Scholarships);
+                    newScholarship.StudentId = studentId;
+                    await _unitOfWork.Scholarships.AddAsync(newScholarship);
+                }
+            }
+
+            // ------------ UPDATE BANK DETAILS (ONLY if has values) ------------
+            if (dto.BankDetails != null && !string.IsNullOrEmpty(dto.BankDetails.AccountHolderName))
+            {
+                var bank = (await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == studentId))
+                    .FirstOrDefault();
+                if (bank != null)
+                {
+                    _mapper.Map(dto.BankDetails, bank);
+                    _unitOfWork.BankDetails.Update(bank);
+                }
+                else
+                {
+                    var newBank = _mapper.Map<BankDetail>(dto.BankDetails);
+                    newBank.StudentId = studentId;
+                    await _unitOfWork.BankDetails.AddAsync(newBank);
+                }
+            }
+
+            // ------------ UPDATE EXTRA INFO (ONLY if has values) ------------
+           
+            if (dto.StudentExtraInfos != null &&
+                (!string.IsNullOrEmpty(dto.StudentExtraInfos.HostellerStatus) ||
+                 !string.IsNullOrEmpty(dto.StudentExtraInfos.Transportation) ||
+                 (dto.StudentExtraInfos.ExtracurricularInterests != null && dto.StudentExtraInfos.ExtracurricularInterests.Any())))
+            {
+                var extra = (await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == studentId))
+                    .FirstOrDefault();
+                if (extra != null)
+                {
+                    _mapper.Map(dto.StudentExtraInfos, extra);
+                    _unitOfWork.StudentExtraInfos.Update(extra);
+                }
+                else
+                {
+                    var newExtra = _mapper.Map<StudentExtraInfo>(dto.StudentExtraInfos);
+                    newExtra.StudentId = studentId;
+                    await _unitOfWork.StudentExtraInfos.AddAsync(newExtra);
+                }
+            }
+
+            // ------------ UPDATE ACHIEVEMENTS (Delete old, add new) ------------
+            if (dto.Achievements != null && dto.Achievements.Any())
+            {
+                var existingAchievements = await _unitOfWork.Achievements.FindAsync(a => a.StudentId == studentId);
+                foreach (var achievement in existingAchievements)
+                {
+                    _unitOfWork.Achievements.Delete(achievement);
+                }
+
+                foreach (var achDto in dto.Achievements)
+                {
+                    var newAch = _mapper.Map<Achievement>(achDto);
+                    newAch.StudentId = studentId;
+                    await _unitOfWork.Achievements.AddAsync(newAch);
+                }
+            }
+
+            // ------------ UPDATE ACADEMIC HISTORY (Delete old, add new) ------------
+            if (dto.AcademicHistories != null && dto.AcademicHistories.Any())
+            {
+                var existingAcademics = await _unitOfWork.AcademicHistories.FindAsync(a => a.StudentId == studentId);
+                foreach (var academic in existingAcademics)
+                {
+                    _unitOfWork.AcademicHistories.Delete(academic);
+                }
+
+                foreach (var acDto in dto.AcademicHistories)
+                {
+                    if (string.IsNullOrEmpty(acDto.Qualification) && string.IsNullOrEmpty(acDto.Board))
+                        continue;
+
+                    // Save uploaded files if they exist
+                    if (acDto.Marksheet != null)
+                        acDto.MarksheetPath = await FileHelper.SaveDocumentAsync(acDto.Marksheet, _wwwrootPath, "academic");
+
+                    if (acDto.Provisional != null)
+                        acDto.ProvisionalPath = await FileHelper.SaveDocumentAsync(acDto.Provisional, _wwwrootPath, "academic");
+
+                    if (acDto.Photo != null)
+                        acDto.PhotoPath = await FileHelper.SaveImageAsync(acDto.Photo, _wwwrootPath, "academic");
+
+                    if (acDto.Signature != null)
+                        acDto.SignaturePath = await FileHelper.SaveSignatureAsync(acDto.Signature, _wwwrootPath, "academic");
+
+                    if (acDto.CharacterCertificate != null)
+                        acDto.CharacterCertificatePath = await FileHelper.SaveDocumentAsync(acDto.CharacterCertificate, _wwwrootPath, "academic");
+
+                    var newAc = _mapper.Map<AcademicHistory>(acDto);
+                    newAc.StudentId = studentId;
+                    await _unitOfWork.AcademicHistories.AddAsync(newAc);
+                }
+            }
+
+            // ------------ UPDATE PROGRAM ENROLLMENT & ACADEMIC SESSIONS (ONLY if has values) ------------
+            if (dto.ProgramEnrollments != null && !string.IsNullOrEmpty(dto.ProgramEnrollments.Faculty))
+            {
+                var enrollment = (await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == studentId))
+                    .FirstOrDefault();
+
+                if (enrollment != null)
+                {
+                    _mapper.Map(dto.ProgramEnrollments, enrollment);
+                    _unitOfWork.ProgramEnrollments.Update(enrollment);
+                }
+                else
+                {
+                    enrollment = _mapper.Map<ProgramEnrollment>(dto.ProgramEnrollments);
+                    enrollment.StudentId = studentId;
+                    enrollment.EnrollmentDate = DateTime.Now;
+                    await _unitOfWork.ProgramEnrollments.AddAsync(enrollment);
+                }
+
+                await _unitOfWork.CompleteAsync();
+
+                // Update Academic Sessions - Delete old and add new
+                if (dto.ProgramEnrollments.AcademicSessions != null && dto.ProgramEnrollments.AcademicSessions.Any())
+                {
+                    var existingSessions = await _unitOfWork.AcademicSessions.FindAsync(s => s.ProgramEnrollmentId == enrollment.Id);
+                    foreach (var session in existingSessions)
+                    {
+                        _unitOfWork.AcademicSessions.Delete(session);
+                    }
+
+                    foreach (var sessionDto in dto.ProgramEnrollments.AcademicSessions)
+                    {
+                        var session = _mapper.Map<AcademicSession>(sessionDto);
+                        session.ProgramEnrollmentId = enrollment.Id;
+                        await _unitOfWork.AcademicSessions.AddAsync(session);
+                    }
+                }
+            }
+
+            // ------------ UPDATE DECLARATION (ONLY if has values) ------------
+            if (dto.Declaration != null && dto.Declaration.IsAgreed && !string.IsNullOrEmpty(dto.Declaration.Place))
+            {
+                var declaration = (await _unitOfWork.Declarations.FindAsync(d => d.StudentId == studentId))
+                    .FirstOrDefault();
+                if (declaration != null)
+                {
+                    _mapper.Map(dto.Declaration, declaration);
+                    _unitOfWork.Declarations.Update(declaration);
+                }
+                else
+                {
+                    var newDeclaration = _mapper.Map<Declaration>(dto.Declaration);
+                    newDeclaration.StudentId = studentId;
+                    newDeclaration.DateOfApplication = DateOnly.FromDateTime(DateTime.Now);
+                    await _unitOfWork.Declarations.AddAsync(newDeclaration);
+                }
+            }
+
+            // SAVE ALL CHANGES
+            await _unitOfWork.CompleteAsync();
+
+            return await GetStudentByIdAsync(studentId);
+        }
+
+
     }
 }

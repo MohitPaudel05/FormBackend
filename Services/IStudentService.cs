@@ -8,6 +8,8 @@ namespace FormBackend.Services
         Task<StudentFullDto?> GetStudentByIdAsync(int studentId);
 
         Task<IEnumerable<StudentDto>> GetAllStudentsAsync();
+        Task<StudentFullDto?> UpdateStudentAsync(int studentId, StudentFullDto studentFullDto);
+
         Task<bool> DeleteStudentAsync(int id);
 
     }
