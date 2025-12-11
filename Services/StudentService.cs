@@ -295,8 +295,21 @@ namespace FormBackend.Services
             var bank = (await _unitOfWork.BankDetails.FindAsync(b => b.StudentId == id)).FirstOrDefault();
             var extraInfo = (await _unitOfWork.StudentExtraInfos.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var achievements = await _unitOfWork.Achievements.FindAsync(a => a.StudentId == id);
-            var enrollment = (await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == id)).FirstOrDefault();
             var declaration = (await _unitOfWork.Declarations.FindAsync(d => d.StudentId == id)).FirstOrDefault();
+
+            var enrollmentData = (await _unitOfWork.ProgramEnrollments.FindAsync(e => e.StudentId == id)).FirstOrDefault();
+
+            
+            List<AcademicSession> academicSessions = new List<AcademicSession>();
+            if (enrollmentData != null)
+            {
+                academicSessions = (await _unitOfWork.AcademicSessions.FindAsync(
+                    a => a.ProgramEnrollmentId == enrollmentData.Id
+                )).ToList();
+
+                
+                enrollmentData.AcademicSessions = academicSessions;
+            }
 
             return new StudentFullDto
             {
@@ -313,7 +326,8 @@ namespace FormBackend.Services
                 StudentExtraInfos = _mapper.Map<StudentExtraInfoDto>(extraInfo) ?? new StudentExtraInfoDto(),
                 Achievements = _mapper.Map<List<AchievementDto>>(achievements) ?? new List<AchievementDto>(),
                 AcademicHistories = _mapper.Map<List<AcademicHistoryDto>>(academicHistories) ?? new List<AcademicHistoryDto>(),
-                ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollment) ?? new ProgramEnrollmentDto(),
+              
+                ProgramEnrollments = _mapper.Map<ProgramEnrollmentDto>(enrollmentData) ?? new ProgramEnrollmentDto(),
                 Declaration = _mapper.Map<DeclarationDto>(declaration) ?? new DeclarationDto()
             };
         }
