@@ -18,7 +18,8 @@ namespace FormBackend.Helpers
                 // Map Gender string -> enum
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => Enum.Parse<Gender>(src.Gender)))
                 // Map DateTime -> DateOnly
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => DateOnly.FromDateTime(src.DateOfBirth)));
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => DateOnly.FromDateTime(src.DateOfBirth)))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             // SecondaryInfo
             CreateMap<SecondaryInfo, SecondaryInfoDto>()

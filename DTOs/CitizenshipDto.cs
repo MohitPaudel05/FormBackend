@@ -8,13 +8,13 @@ namespace FormBackend.DTOs
         public DateOnly CitizenshipIssueDate { get; set; }
         public string CitizenshipIssueDistrict { get; set; } = string.Empty;
         [JsonIgnore]
-        public IFormFile CitizenshipFrontPhoto { get; set; }
+        public IFormFile ?CitizenshipFrontPhoto { get; set; }
         [JsonIgnore]
-        public IFormFile CitizenshipBackPhoto { get; set; }
+        public IFormFile? CitizenshipBackPhoto { get; set; }
 
         // File paths stored in database
-        public string CitizenshipFrontPhotoPath { get; set; } = string.Empty;
-        public string CitizenshipBackPhotoPath { get; set; } = string.Empty;
+        public string ?CitizenshipFrontPhotoPath { get; set; } = string.Empty;
+        public string ?CitizenshipBackPhotoPath { get; set; } = string.Empty;
 
     }
 }

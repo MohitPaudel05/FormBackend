@@ -416,28 +416,42 @@ namespace FormBackend.Services
                 }
             }
 
-            // ------------ UPDATE CITIZENSHIP (with photo upload) ------------
+            //----Update CITIZENSHIP----
+
             if (dto.Citizenship != null)
             {
                 var citizenship = (await _unitOfWork.CitizenShips.FindAsync(x => x.StudentId == studentId))
                     .FirstOrDefault();
-
-                // Save citizenship front photo if provided
-                if (dto.Citizenship.CitizenshipFrontPhoto != null)
-                {
-                    dto.Citizenship.CitizenshipFrontPhotoPath = await FileHelper.SaveImageAsync(
-                        dto.Citizenship.CitizenshipFrontPhoto, _wwwrootPath, "citizenship");
-                }
-
-                // Save citizenship back photo if provided
-                if (dto.Citizenship.CitizenshipBackPhoto != null)
-                {
-                    dto.Citizenship.CitizenshipBackPhotoPath = await FileHelper.SaveImageAsync(
-                        dto.Citizenship.CitizenshipBackPhoto, _wwwrootPath, "citizenship");
-                }
-
                 if (citizenship != null)
                 {
+                    // Handle new front photo upload
+                    if (dto.Citizenship.CitizenshipFrontPhoto != null)
+                    {
+                        dto.Citizenship.CitizenshipFrontPhotoPath = await FileHelper.SaveImageAsync(
+                            dto.Citizenship.CitizenshipFrontPhoto,
+                            _wwwrootPath,
+                            "citizenship"
+                        );
+                    }
+                    else
+                    {
+                        // Keep old path
+                        dto.Citizenship.CitizenshipFrontPhotoPath = citizenship.CitizenshipFrontPhotoPath;
+                    }
+                    // Handle new back photo upload
+                    if (dto.Citizenship.CitizenshipBackPhoto != null)
+                    {
+                        dto.Citizenship.CitizenshipBackPhotoPath = await FileHelper.SaveImageAsync(
+                            dto.Citizenship.CitizenshipBackPhoto,
+                            _wwwrootPath,
+                            "citizenship"
+                        );
+                    }
+                    else
+                    {
+                        // Keep old path
+                        dto.Citizenship.CitizenshipBackPhotoPath = citizenship.CitizenshipBackPhotoPath;
+                    }
                     _mapper.Map(dto.Citizenship, citizenship);
                     _unitOfWork.CitizenShips.Update(citizenship);
                 }
