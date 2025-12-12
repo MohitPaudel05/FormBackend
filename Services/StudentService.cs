@@ -106,51 +106,35 @@ namespace FormBackend.Services
             // Addresses - Now iterates through List<AddressDto>
             if (dto.Addresses != null && dto.Addresses.Any())
             {
-                // Find permanent and temporary addresses
-                var permanentAddressDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "Permanent");
-                var temporaryAddressDto = dto.Addresses.FirstOrDefault(a =>
+                var permanentDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "Permanent");
+                var temporaryDto = dto.Addresses.FirstOrDefault(a =>
                     a.AddressType == "Temporary" || a.AddressType == "SameAsPermanent");
 
-                if (permanentAddressDto != null && temporaryAddressDto != null)
+                if (permanentDto != null)
                 {
-                    // Check if addresses are identical
-                    bool isSameAddress =
-                        permanentAddressDto.Province == temporaryAddressDto.Province &&
-                        permanentAddressDto.District == temporaryAddressDto.District &&
-                        permanentAddressDto.Municipality == temporaryAddressDto.Municipality &&
-                        permanentAddressDto.WardNumber == temporaryAddressDto.WardNumber &&
-                        permanentAddressDto.Tole == temporaryAddressDto.Tole &&
-                        permanentAddressDto.HouseNumber == temporaryAddressDto.HouseNumber;
-
-                    if (isSameAddress)
-                    {
-                        // Store only ONE address with type "SameAsPermanent"
-                        var address = _mapper.Map<Address>(permanentAddressDto);
-                        address.StudentId = studentId;
-                        address.AddressType = AddressType.SameAsPermanent;
-                        await _unitOfWork.Addresses.AddAsync(address);
-                    }
-                    else
-                    {
-                        // Store TWO addresses - Permanent and Temporary
-                        var permanentAddress = _mapper.Map<Address>(permanentAddressDto);
-                        permanentAddress.StudentId = studentId;
-                        permanentAddress.AddressType = AddressType.Permanent;
-                        await _unitOfWork.Addresses.AddAsync(permanentAddress);
-
-                        var temporaryAddress = _mapper.Map<Address>(temporaryAddressDto);
-                        temporaryAddress.StudentId = studentId;
-                        temporaryAddress.AddressType = AddressType.Temporary;
-                        await _unitOfWork.Addresses.AddAsync(temporaryAddress);
-                    }
+                    var permanent = _mapper.Map<Address>(permanentDto);
+                    permanent.StudentId = studentId;
+                    permanent.AddressType = AddressType.Permanent;
+                    await _unitOfWork.Addresses.AddAsync(permanent);
                 }
-                else if (permanentAddressDto != null)
+
+                if (temporaryDto != null)
                 {
-                    // Only Permanent address exists
-                    var address = _mapper.Map<Address>(permanentAddressDto);
-                    address.StudentId = studentId;
-                    address.AddressType = AddressType.Permanent;
-                    await _unitOfWork.Addresses.AddAsync(address);
+                    bool isSame = permanentDto != null &&
+                                  permanentDto.Province == temporaryDto.Province &&
+                                  permanentDto.District == temporaryDto.District &&
+                                  permanentDto.Municipality == temporaryDto.Municipality &&
+                                  permanentDto.WardNumber == temporaryDto.WardNumber &&
+                                  permanentDto.Tole == temporaryDto.Tole &&
+                                  permanentDto.HouseNumber == temporaryDto.HouseNumber;
+
+                    var addressToSave = isSame ? permanentDto : temporaryDto;
+
+                    var entity = _mapper.Map<Address>(addressToSave);
+                    entity.StudentId = studentId;
+                    entity.AddressType = isSame ? AddressType.SameAsPermanent : AddressType.Temporary;
+
+                    await _unitOfWork.Addresses.AddAsync(entity);
                 }
             }
 
@@ -498,43 +482,92 @@ namespace FormBackend.Services
                     await _unitOfWork.Emergencies.AddAsync(newEmergency);
                 }
             }
-
-            // ------------ UPDATE ADDRESSES (Delete old, add new) ------------
+            //address
             if (dto.Addresses != null && dto.Addresses.Any())
             {
-                var existingAddresses = await _unitOfWork.Addresses.FindAsync(a => a.StudentId == studentId);
-                foreach (var addr in existingAddresses)
-                {
-                    _unitOfWork.Addresses.Delete(addr);
-                }
+                var sameAsPermanentDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "SameAsPermanent");
+                var permanentDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "Permanent");
+                var temporaryDto = dto.Addresses.FirstOrDefault(a => a.AddressType == "Temporary");
 
-                foreach (var addrDto in dto.Addresses)
+                // Fetch all existing addresses for this student
+                var existingAddresses = (await _unitOfWork.Addresses
+                    .FindAsync(a => a.StudentId == studentId))
+                    .ToList();
+
+                if (sameAsPermanentDto != null)
                 {
-                    var address = _mapper.Map<Address>(addrDto);
-                    address.StudentId = studentId;
-                    await _unitOfWork.Addresses.AddAsync(address);
+                    // User wants SameAsPermanent
+                    // Delete existing Permanent (1) and Temporary (2)
+                    foreach (var addr in existingAddresses.Where(a => a.AddressType == AddressType.Permanent
+                                                                    || a.AddressType == AddressType.Temporary))
+                    {
+                        _unitOfWork.Addresses.Delete(addr);
+                    }
+
+                    // Reuse existing SameAsPermanent if exists
+                    var sameAddress = existingAddresses.FirstOrDefault(a => a.AddressType == AddressType.SameAsPermanent);
+                    if (sameAddress != null)
+                    {
+                        // Update existing row
+                        _mapper.Map(sameAsPermanentDto, sameAddress);
+                    }
+                    else
+                    {
+                        // Add new row only if none exists
+                        sameAddress = _mapper.Map<Address>(sameAsPermanentDto);
+                        sameAddress.StudentId = studentId;
+                        sameAddress.AddressType = AddressType.SameAsPermanent;
+                        await _unitOfWork.Addresses.AddAsync(sameAddress);
+                    }
+                }
+                else
+                {
+                    // User wants separate Permanent and Temporary
+
+                    // Delete existing SameAsPermanent (3)
+                    foreach (var addr in existingAddresses.Where(a => a.AddressType == AddressType.SameAsPermanent))
+                    {
+                        _unitOfWork.Addresses.Delete(addr);
+                    }
+
+                    // Permanent
+                    if (permanentDto != null)
+                    {
+                        var permanentAddress = existingAddresses.FirstOrDefault(a => a.AddressType == AddressType.Permanent);
+                        if (permanentAddress != null)
+                            _mapper.Map(permanentDto, permanentAddress); // update existing
+                        else
+                        {
+                            // Add only if none exists
+                            permanentAddress = _mapper.Map<Address>(permanentDto);
+                            permanentAddress.StudentId = studentId;
+                            permanentAddress.AddressType = AddressType.Permanent;
+                            await _unitOfWork.Addresses.AddAsync(permanentAddress);
+                        }
+                    }
+
+                    // Temporary
+                    if (temporaryDto != null)
+                    {
+                        var tempAddress = existingAddresses.FirstOrDefault(a => a.AddressType == AddressType.Temporary);
+                        if (tempAddress != null)
+                            _mapper.Map(temporaryDto, tempAddress); // update existing
+                        else
+                        {
+                            // Add only if none exists
+                            tempAddress = _mapper.Map<Address>(temporaryDto);
+                            tempAddress.StudentId = studentId;
+                            tempAddress.AddressType = AddressType.Temporary;
+                            await _unitOfWork.Addresses.AddAsync(tempAddress);
+                        }
+                    }
                 }
             }
 
-            // ------------ UPDATE PARENTS (Delete old, add new) ------------
-            if (dto.Parents != null && dto.Parents.Any())
-            {
-                var existingParents = await _unitOfWork.ParentDetails.FindAsync(p => p.StudentId == studentId);
-                foreach (var parent in existingParents)
-                {
-                    _unitOfWork.ParentDetails.Delete(parent);
-                }
 
-                foreach (var parentDto in dto.Parents)
-                {
-                    if (string.IsNullOrEmpty(parentDto.FullName))
-                        continue;
 
-                    var parent = _mapper.Map<ParentDetail>(parentDto);
-                    parent.StudentId = studentId;
-                    await _unitOfWork.ParentDetails.AddAsync(parent);
-                }
-            }
+
+
 
             // ------------ UPDATE SCHOLARSHIP (ONLY if has values) ------------
             if (dto.Scholarships != null && !string.IsNullOrEmpty(dto.Scholarships.ScholarshipType))
