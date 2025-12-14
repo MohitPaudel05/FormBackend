@@ -69,14 +69,23 @@ namespace FormBackend.Helpers
 
 
             // ===== ADDRESS =====
+            // AddressDto -> Address
             CreateMap<AddressDto, Address>()
-            .ForMember(dest => dest.Province, opt => opt.MapFrom(src =>
-             Enum.Parse<Province>(src.Province, true)))  // Remove 'ignoreCase:' - use positional argument
-            .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src =>
-            Enum.Parse<AddressType>(src.AddressType, true)))  // Add AddressType mapping too
-           .ReverseMap()
-           .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType.ToString()))
-           .ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province.ToString()));
+                .ForMember(dest => dest.Province, opt =>
+                    opt.MapFrom(src => Enum.Parse<Province>(src.Province, true)))
+                .ForMember(dest => dest.AddressType, opt =>
+                    opt.MapFrom(src =>
+                        src.AddressType == "SameAsPermanent"
+                            ? AddressType.Permanent   // Force Permanent
+                            : Enum.Parse<AddressType>(src.AddressType, true)
+                    ));
+
+            // Address -> AddressDto
+            CreateMap<Address, AddressDto>()
+                .ForMember(dest => dest.AddressType, opt =>
+                    opt.MapFrom(src => src.AddressType.ToString()))
+                .ForMember(dest => dest.Province, opt =>
+                    opt.MapFrom(src => src.Province.ToString()));
             // ===== PARENT DETAIL =====
             CreateMap<ParentDetailDto, ParentDetail>()
                 .ForMember(dest => dest.ParentType, opt => opt.MapFrom(src => Enum.Parse<ParentType>(src.ParentType)))

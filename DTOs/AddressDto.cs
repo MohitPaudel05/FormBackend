@@ -2,7 +2,7 @@
 {
     public class AddressDto
     {
-        public string AddressType { get; set; } = string.Empty; // "Permanent" / "Temporary" / "CopyOfPermanent"
+        public string AddressType { get; set; } = string.Empty; // "Permanent" / "Temporary" / "SameAsPermanent"
         public string Province { get; set; } = string.Empty; // enum as string
         public string District { get; set; } = string.Empty;
         public string Municipality { get; set; } = string.Empty;
