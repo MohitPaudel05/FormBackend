@@ -5,6 +5,7 @@ namespace FormBackend.DTOs
 {
     public class AcademicHistoryDto
     {
+        public int ?Id { get; set; }
         public string Qualification { get; set; } 
         public string Board { get; set; }
         public string Institution { get; set; }
@@ -19,13 +20,13 @@ namespace FormBackend.DTOs
         [JsonIgnore]
         public IFormFile? Signature { get; set; }
         [JsonIgnore]
-        public IFormFile? CharacterCertificate { get; set; }  
+        public IFormFile? CharacterCertificate { get; set; }
 
-        public string MarksheetPath { get; set; } = string.Empty;
-        public string ProvisionalPath { get; set; } = string.Empty;
-        public string PhotoPath { get; set; } = string.Empty;
-        public string SignaturePath { get; set; } = string.Empty;
-        public string CharacterCertificatePath { get; set; } = string.Empty;
+        public string? MarksheetPath { get; set; }
+        public string? ProvisionalPath { get; set; }
+        public string? PhotoPath { get; set; }
+        public string? SignaturePath { get; set; }
+        public string? CharacterCertificatePath { get; set; }
 
     }
 }

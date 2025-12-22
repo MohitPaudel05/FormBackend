@@ -11,7 +11,7 @@ namespace FormBackend.Helpers
         private static readonly string[] permittedDocumentExtensions = { ".jpg", ".jpeg", ".png", ".pdf" };
         private const long maxImageSize = 2_000_000;     // 2 MB
         private const long maxDocumentSize = 5_000_000;  // 5 MB
-        private const long maxSignatureSize = 1_000_000; // 1 MB
+        private const long maxSignatureSize = 2_000_000; // 2 MB
 
         /// <summary>
         /// Save a student image to wwwroot/images
